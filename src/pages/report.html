@@ -1,0 +1,65 @@
+<!-- 보고서 생성 · #report -->
+<div class="wrap" id="view-rp" hidden>
+  <div class="ph"><h1>보고서 생성</h1><p>이슈를 간편하게 문서화 해보세요.</p></div>
+  <section class="card rgen" aria-label="근거 리포트 추출">
+    <div class="chart-top"><h2>보고서/개발 이슈 만들기</h2>
+      <div class="seg" role="tablist" aria-label="만들 것">
+        <button role="tab" id="out-a4" data-out="a4" aria-selected="true">A4 보고서</button>
+        <button role="tab" id="out-dev" data-out="dev" aria-selected="false">개발 이슈 초안</button>
+      </div>
+    </div>
+    <div class="rg-ctrl">
+      <label class="rg-f"><span>담당 부서</span><select id="rg-dept"></select></label>
+      <label class="rg-f"><span>범위</span><select id="rg-scope"><option value="top3">우선순위 상위 3건</option><option value="all">처리 필요 전체</option><option value="one">이슈 1건 선택</option></select></label>
+      <label class="rg-f" id="rg-one-wrap" hidden><span>이슈</span><select id="rg-issue"></select></label>
+      <label class="rg-f"><span>받는 사람</span><input id="rg-to" type="text" placeholder="담당자를 입력해 주세요"></label>
+      <div class="rg-act" data-for="a4">
+        <button class="btn" id="rg-copy">텍스트 복사</button>
+        <button class="btn" id="rg-html">HTML 저장</button>
+        <button class="btn primary" id="rg-print">PDF로 저장</button>
+      </div>
+    </div>
+    <p class="rg-note" data-for="a4">PDF로 저장: 인쇄 창에서 대상 프린터를 "PDF로 저장"으로 고르세요. 공유 링크 화면에서는 인쇄 창이 열리지 않으니, 받은 HTML 파일을 브라우저로 열어 사용하세요.</p>
+    <div class="rg-paper" data-for="a4"><article class="a4" id="a4" aria-label="리포트 미리보기"></article></div>
+    <div class="dev" data-for="dev" hidden>
+      <div class="dev-empty" id="dev-empty" hidden>개발 이슈는 한 건씩 만듭니다. 범위를 "이슈 1건 선택"으로 바꾸거나, 이슈 상세에서 "보고서 · 개발 이슈 만들기"를 눌러 주세요.</div>
+      <div class="dev-body" id="dev-body">
+        <div class="dev-ctrl">
+          <label class="rg-f"><span>만들 곳</span><select id="dev-target"><option value="gh">GitHub 이슈</option><option value="jira">Jira 티켓</option></select></label>
+          <label class="rg-f" id="dev-repo-wrap"><span>저장소 (owner/repo)</span><input id="dev-repo" type="text" placeholder="예: lge-thinq/thinq-app"></label>
+          <div class="rg-act">
+            <button class="btn" id="dev-copy">본문 복사</button>
+            <a class="btn primary" id="dev-open" href="#" target="_blank" rel="noopener">GitHub에서 이슈 열기</a>
+          </div>
+        </div>
+        <p class="rg-note" id="dev-note">저장소를 입력하면 제목·본문·라벨이 채워진 GitHub 새 이슈 화면이 열립니다. 사진는 이슈를 만든 뒤 파일로 첨부하세요.</p>
+        <div class="dev-grid">
+          <div class="dev-fields">
+            <div class="df"><span>제목</span><b id="dev-title"></b></div>
+            <div class="df"><span>라벨</span><div id="dev-labels" class="dev-labels"></div></div>
+            <div class="df"><span>담당 팀</span><b id="dev-team"></b></div>
+            <div class="df"><span>우선순위</span><b id="dev-prio"></b></div>
+          </div>
+          <pre class="dev-md" id="dev-md" tabindex="0" aria-label="이슈 본문"></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+  <div class="mid">
+    <section class="card agentlog" aria-label="에이전트 활동">
+      <div class="chart-top"><h2>에이전트 활동 <span class="sub">오늘 · 사람 개입 없이 자동 실행</span></h2></div>
+      <ol class="steps">
+        <li><span class="t">09:00</span><span class="dot" style="background:var(--ink-2)"></span><span><b>수집</b> · Google Play 리뷰 312건 자동 수집, 중복·광고 27건 걸러냄</span></li>
+        <li><span class="t">09:02</span><span class="dot" style="background:var(--ink-2)"></span><span><b>분류</b> · 부서 라벨로 분류, 기존 이슈에 41건 연결</span></li>
+        <li><span class="t">09:03</span><span class="dot" style="background:var(--warn)"></span><span><b>신규 이슈</b> · VOC-238 에어컨 원격 제어 응답 지연 생성</span></li>
+        <li><span class="t">09:03</span><span class="dot" style="background:var(--crit)"></span><span><b>재발 확인</b> · VOC-231 해결 처리 후 다시 증가, 중요도 올림</span></li>
+        <li><span class="t">09:03</span><span class="dot" style="background:var(--good)"></span><span><b>알림</b> · 에어컨 개발부, THINQ 개발부에 메일 2건 발송</span></li>
+        <li class="next"><span class="t">10:00</span><span class="dot"></span><span>다음 수집 예정</span></li>
+      </ol>
+    </section>
+    <section class="card alerts" aria-label="알림 기록">
+      <div class="chart-top"><h2>알림 기록 <span class="sub">에이전트가 담당 부서에 보낸 메일 · 최신 순</span></h2></div>
+      <ul id="alerts"></ul>
+    </section>
+  </div>
+</div>

@@ -1,0 +1,36 @@
+/* 색·폰트 토큰. 라이트 값이 :root, 다크 값은 두 블록(시스템 설정 / data-theme)에 같은 값 */
+:root{
+  --bg:#fafafa; --surface:#ffffff; --surface-2:#f7f6f8;
+  --ink:#2f2f2f; --ink-2:#5f5c66; --ink-3:#9a97a1;
+  --line:#e6e4ea; --line-2:#d4d1d9;
+  --accent:#ff0017; --accent-soft:#ffecee; --accent-band:#ffd9dd; --accent-ink:#c80315;
+  --bar:#d9d6de; --bar-hover:#bfbbc6;
+  --warn-bg:#fdf3dc; --warn-ink:#7a4d00;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4;
+  --bar-hi:#8a8693;--crit:#e10a1e;--crit-bg:#fbe9ec;--crit-ink:#c80315;--warn:#c27a00;--good:#1b7f4d;--good-bg:#e5f4ec;--good-ink:#145c38;--info-bg:#eeedf1;--info-ink:#2f2f2f;
+  --re:#02a7dd; --re-bg:#d9f2fa; --re-ink:#0278a0; --drawer:#f5f5f7; --field:#d6d6d6; --row-head:#fbfbfb; --ph:#7a748a;
+  --sans:"Pretendard","Pretendard Variable",-apple-system,"Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif;
+  --mono:"Pretendard","Pretendard Variable",-apple-system,"Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;--bar-hi:#8a8693;--crit:#ff5a6a;--crit-bg:#3d1c23;--crit-ink:#ff9aa5;--warn:#e3a53a;--good:#4cc38a;--good-bg:#16301f;--good-ink:#8fdcb3;--info-bg:#2a2930;--info-ink:#c9c5d1;
+    --bg:#131216; --surface:#1c1b20; --surface-2:#232228;
+    --ink:#eeecf1; --ink-2:#aeaab6; --ink-3:#77737f;
+    --line:#2d2b33; --line-2:#3a3841;
+    --accent:#ff4d5e; --accent-soft:#3a1d24; --accent-band:#4a222b; --accent-ink:#ff9aa5; --re:#3bc3ef; --re-bg:#12303b; --re-ink:#8fdcf6; --drawer:#16151a; --field:#3a3841; --row-head:#232228; --ph:#77737f;
+    --bar:#3d3a44; --bar-hover:#55515e;
+    --warn-bg:#3a2e12; --warn-ink:#f0c46a;
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;--bar-hi:#8a8693;--crit:#ff5a6a;--crit-bg:#3d1c23;--crit-ink:#ff9aa5;--warn:#e3a53a;--good:#4cc38a;--good-bg:#16301f;--good-ink:#8fdcb3;--info-bg:#2a2930;--info-ink:#c9c5d1;
+  --bg:#131216; --surface:#1c1b20; --surface-2:#232228;
+  --ink:#eeecf1; --ink-2:#aeaab6; --ink-3:#77737f;
+  --line:#2d2b33; --line-2:#3a3841;
+  --accent:#ff4d5e; --accent-soft:#3a1d24; --accent-band:#4a222b; --accent-ink:#ff9aa5; --re:#3bc3ef; --re-bg:#12303b; --re-ink:#8fdcf6; --drawer:#16151a; --field:#3a3841; --row-head:#232228; --ph:#77737f;
+  --bar:#3d3a44; --bar-hover:#55515e;
+  --warn-bg:#3a2e12; --warn-ink:#f0c46a;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181;
+}

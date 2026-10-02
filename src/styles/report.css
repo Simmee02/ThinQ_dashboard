@@ -1,0 +1,72 @@
+/* 보고서 생성(#report) + 인쇄용 규칙 */
+/* report view reuses issue-card styles */
+#view-rp .sample{background:var(--warn-bg);color:var(--warn-ink);font-size:12px;font-weight:500;padding:4px 10px;border-radius:6px}
+#view-rp .pg-sub{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;color:var(--ink-2);font-size:13px;margin-top:-4px}
+#view-rp .mid{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:16px}
+#view-rp .mid{grid-template-columns:minmax(0,1fr)}
+#view-rp .alerts ul{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+#view-rp .al{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:10px;align-items:center;width:100%;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:9px 10px;cursor:pointer}
+#view-rp .al:hover{background:var(--surface-2)}
+#view-rp .al .av{width:34px;height:34px;border-radius:50%;background:var(--surface-2);color:var(--ink-2);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+#view-rp .al b{display:block;font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#view-rp .al span.m{font-size:11px;color:var(--ink-3)}
+#view-rp .pill{font-size:11px;font-weight:500;padding:3px 9px;border-radius:6px;white-space:nowrap}
+#view-rp .pill.sent{background:var(--good-bg);color:var(--good-ink)}
+#view-rp .pill.re{background:var(--crit-bg);color:var(--crit-ink)}
+#view-rp .mid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start}
+#view-rp .steps{list-style:none;margin:14px 0 0;padding:0;display:flex;flex-direction:column}
+#view-rp .steps li{display:grid;grid-template-columns:44px 12px minmax(0,1fr);gap:10px;align-items:start;font-size:13px;color:var(--ink-2);padding-bottom:13px;position:relative}
+#view-rp .steps li::before{content:"";position:absolute;left:59px;top:13px;bottom:-1px;width:1px;background:var(--line-2)}
+#view-rp .steps li:last-child::before{display:none}
+#view-rp .steps li:last-child{padding-bottom:0}
+#view-rp .steps .t{font-family:var(--mono);font-size:12px;color:var(--ink-3);padding-top:1px}
+#view-rp .steps .dot{width:9px;height:9px;border-radius:50%;margin-top:5px;margin-left:1px;z-index:1;box-shadow:0 0 0 3px var(--surface)}
+#view-rp .steps b{color:var(--ink);font-weight:500}
+#view-rp .steps li.next{color:var(--ink-3)}
+#view-rp .steps li.next .dot{background:var(--surface);box-shadow:inset 0 0 0 1.5px var(--line-2),0 0 0 3px var(--surface)}
+#view-rp .al{border:0;background:var(--surface-2)}
+#view-rp .al:hover{background:var(--line)}
+@media (max-width:1100px){#view-rp .mid{grid-template-columns:minmax(0,1fr)}}
+#view-rp{gap:16px}
+
+/* ===== report generator ===== */
+#view-rp .rg-ctrl{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;margin-top:14px}
+#view-rp .rg-f{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--ink-2)}
+#view-rp .rg-f select,#view-rp .rg-f input{font:inherit;font-size:13px;color:var(--ink);background:var(--surface-2);border:0;border-radius:8px;padding:8px 10px;min-width:160px}
+#view-rp .rg-f input{min-width:200px}
+#view-rp .rg-f select:focus,#view-rp .rg-f input:focus{outline:2px solid var(--accent);outline-offset:0}
+#view-rp .rg-act{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
+#view-rp .btn{border:1px solid var(--line-2);background:var(--surface);border-radius:8px;padding:8px 14px;cursor:pointer;font:inherit;font-size:13px;font-weight:500;color:var(--ink)}
+#view-rp .btn:hover{background:var(--surface-2)}
+#view-rp .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+#view-rp .rg-note{margin:10px 0 0;font-size:12px;color:var(--ink-3)}
+#view-rp .rg-paper{margin-top:14px;background:var(--surface-2);border-radius:12px;padding:28px 16px;overflow-x:auto}
+
+@media print{
+  @page{size:A4;margin:12mm}
+  html,body{background:#fff!important}
+  .side,.topbar,#view-is,#view-ov,#view-mk,#view-rp>*:not(.rgen),.rgen>*:not(.rg-paper),.toast{display:none!important}
+  .app{display:block!important;min-height:0!important}
+  .content,#view-rp,.rgen,.rg-paper{padding:0!important;margin:0!important;background:none!important;box-shadow:none!important;max-width:none!important}
+  #a4{width:auto;min-height:0;box-shadow:none;padding:0;margin:0}
+}
+
+
+/* ===== dev issue draft (report tab) ===== */
+#view-rp .rgen .chart-top{align-items:center}
+#view-rp .seg{display:inline-flex;background:var(--surface-2);border-radius:999px;padding:3px}
+#view-rp .seg button{font:inherit;font-size:13px;font-weight:500;border:0;background:transparent;color:var(--ink-2);padding:6px 14px;border-radius:999px;cursor:pointer}
+#view-rp .seg button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 0 0 1px var(--line-2)}
+#view-rp a.btn{text-decoration:none;display:inline-flex;align-items:center}
+#view-rp a.btn[aria-disabled="true"]{opacity:.45;pointer-events:none}
+#view-rp .dev{margin-top:14px}
+#view-rp .dev-empty{background:var(--surface-2);border-radius:10px;padding:20px;text-align:center;color:var(--ink-2);font-size:13px}
+#view-rp .dev-ctrl{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+#view-rp .dev-grid{display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:16px;margin-top:14px}
+@media (max-width:980px){#view-rp .dev-grid{grid-template-columns:minmax(0,1fr)}}
+#view-rp .dev-fields{display:flex;flex-direction:column;gap:12px;background:var(--surface-2);border-radius:10px;padding:14px 16px;align-self:start}
+#view-rp .df span{display:block;font-size:12px;color:var(--ink-3);margin-bottom:3px}
+#view-rp .df b{font-weight:500;font-size:13px;overflow-wrap:anywhere}
+#view-rp .dev-labels{display:flex;gap:6px;flex-wrap:wrap}
+#view-rp .dev-labels i{font-style:normal;font-family:var(--mono);font-size:11px;background:var(--surface);border:1px solid var(--line-2);border-radius:999px;padding:1px 8px}
+#view-rp .dev-md{margin:0;background:#1c1b1f;color:#eeecf1;border-radius:10px;padding:16px 18px;font-family:var(--mono);font-size:12px;line-height:1.65;white-space:pre-wrap;overflow-wrap:anywhere;max-height:620px;overflow:auto}

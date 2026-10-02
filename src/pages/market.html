@@ -1,0 +1,62 @@
+<!-- 국가별 시장 분석 · #market -->
+<div class="wrap" id="view-mk" hidden>
+  <div class="ph"><h1>국가별 시장 분석</h1><p>시장별 VoC 이슈의 국가별 이슈 집중도를 비교해보세요.</p></div>
+  <div class="dt">
+    <nav class="mlist" aria-label="시장 목록"><h2>시장 17</h2><div id="mlist" style="display:contents"></div></nav>
+
+    <main class="dt-main">
+      <div class="dt-head">
+        <div class="t"><h1 id="dt-name"></h1><span id="dt-pill"></span><span id="dt-small"></span></div>
+      </div>
+
+      <section class="card">
+        <h2>기본 정보</h2>
+        <div class="kv" id="dt-kv"></div>
+      </section>
+
+      <section class="card split">
+        <div>
+          <div class="chart-top"><h2>국가별 이슈 집중도 <span class="sub nl">전체 국가 평균 대비 이 국가에서 해당 이슈가 차지하는 비중 (국가별 이슈 집중도 1.0 = 전체 국가 평균 수준)</span></h2></div>
+          <div class="tl" id="dt-topics"></div>
+        </div>
+        <div class="aside">
+          <div class="seg sm" role="group" aria-label="비교 단위" id="dt-seg">
+            <button data-p="d" aria-pressed="false">1일</button><button data-p="w" aria-pressed="true">1주</button><button data-p="m" aria-pressed="false">1달</button>
+          </div>
+          <span class="sub" style="margin-top:6px">평균 별점</span>
+          <div class="big" id="dt-big"></div>
+          <div class="chg" id="dt-chg"></div>
+        </div>
+      </section>
+
+      <section class="card summary">
+        <h2>자동 요약</h2>
+        <p id="dt-sum"></p>
+      </section>
+
+      <section class="card">
+        <div class="chart-top"><h2>현지화 유형 6종 <span class="sub">현지화 실패로 생긴 불만을 여섯 종류로 나눈 것</span></h2></div>
+        <div class="types">
+          <div class="type"><b>언어·번역</b><span>예: 앱 문구가 어색하거나 번역이 안 됨</span></div>
+          <div class="type"><b>날짜·시간 규격</b><span>예: 요일 형식, 서머타임 처리</span></div>
+          <div class="type"><b>단위·수치 규격</b><span>예: 온도·용량 단위가 현지 기준과 다름</span></div>
+          <div class="type"><b>계정·국가 제한</b><span>예: 계정 국가가 고정돼 바꿀 수 없음</span></div>
+          <div class="type"><b>현지 규격·제도</b><span>예: 현지 인증·표준(예: Matter)과 안 맞음</span></div>
+          <div class="type"><b>개인정보·권한 규범</b><span>예: 위치 권한 요구가 현지 정서에 비해 과함</span></div>
+        </div>
+      </section>
+    </main>
+
+    <aside class="dt-side">
+      <section class="card">
+        <h2>집중 이슈가 같은 시장</h2>
+        <div id="dt-peer-sub" style="margin-top:8px"></div>
+        <div id="dt-peers" style="margin-top:6px"></div>
+      </section>
+      <section class="card">
+        <div class="chart-top"><h2>대표 리뷰</h2></div>
+        <div id="dt-reviews" style="margin-top:4px"></div>
+      </section>
+    </aside>
+  </div>
+</div>

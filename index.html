@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ThinQ VOC 에이전트</title>
+<link rel="icon" href="data:,">
+<style id="boot">body{visibility:hidden}</style>
+</head>
+<body>
+<div class="app">
+<aside class="side" aria-label="메뉴">
+  <div class="brand"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="var(--crit)"/><path d="M6.8 11.6 12 7.3l5.2 4.3V17.2H6.8z" fill="none" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/><path d="M10.4 17.2v-3.1h3.2v3.1" fill="none" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></svg><span>ThinQ VoC<br>Management System</span></div>
+  <nav role="tablist" aria-label="화면">
+    <button role="tab" id="tab-is" data-route="issues" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2.8 19h18.4L12 3Z"/><path d="M12 10v4"/><path d="M12 17h.01"/></svg>VoC 이슈 관리</button>
+    <button role="tab" id="tab-ov" data-route="trend" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-7"/><path d="M22 20H2"/></svg>글로벌 VoC 동향</button>
+    <button role="tab" id="tab-mk" data-route="market" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18"/></svg>국가별 시장 분석</button>
+    <button role="tab" id="tab-rp" data-route="report" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6"/><path d="M9 13h7"/><path d="M9 17h7"/></svg>보고서 생성</button>
+  </nav>
+  <div class="sec">설정</div>
+  <nav><button disabled><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>시스템 설정</button></nav>
+  <div class="bottom">
+    <div class="agent-state"><span class="dot"></span><span>에이전트 작동 중<br>마지막 수집 <span class="num">09:00</span> 1시간마다</span></div>
+  </div>
+</aside>
+<div class="content">
+  <div class="topbar">
+    <button class="icon-btn" id="bell" aria-label="새 알림"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg><span class="badge" id="bell-n"></span></button>
+    <div class="me"><span class="av">김</span><div><b>ThinQ 개발부</b><span>김재민 선임</span></div></div>
+  </div>
+
+  <main id="views"></main>
+</div>
+</div>
+<div class="toast" id="toast" role="status"></div>
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>
