@@ -50,15 +50,3 @@ src/
   assets/fonts/PretendardSubset.woff2   화면 글자 + 한글 2,350자 서브셋
 ```
 
-## 화면을 하나 추가하려면
-
-1. `src/pages/새화면.html` 조각을 만들고 바깥 요소에 `id="view-xx" hidden`을 줍니다.
-2. `src/views/새화면.js`를 만들고 `export function onShow(param) {}`를 둡니다.
-3. `src/mount.js`에 조각을 `?raw`로 import 해 넣고 `VIEWS`에 `['주소', 'view-xx', '탭 id']`를 추가합니다. `src/main.js`에서 모듈을 import 하고 `onShow` 목록에 넣습니다.
-4. `index.html` 사이드바에 `<button role="tab" id="탭 id" data-route="주소">`를 추가합니다.
-
-## 참고
-
-- 모든 숫자·리뷰 문구·조직도는 예시 데이터입니다. 실제 사례는 2026년 7월 심야 접속 장애(E1031) 날짜·시각뿐입니다.
-- 화면 상태(담당자 지정, 메모 등)는 새로고침하면 처음으로 돌아갑니다. 저장하려면 서버 API가 필요합니다.
-- 코드는 단일 HTML에서 동작을 바꾸지 않고 옮긴 것이라 한 줄이 긴 곳이 있습니다. Prettier로 한 번 정리하는 걸 권합니다.
