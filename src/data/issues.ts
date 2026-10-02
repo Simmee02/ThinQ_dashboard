@@ -1,17 +1,34 @@
 // 이슈 예시 데이터와 계산 (우선순위 점수, 일별 리뷰 수 생성, 화면 매핑)
 // 실제 데이터를 붙일 때는 I 배열을 API 응답으로 바꾸면 됩니다.
+export type Status = 'reopen' | 'new' | 'open' | 'watch' | 'done';
+export type EventKind = 'detect' | 'mail' | 'fix' | 'reopen' | 'press' | 'hypo';
+export type IssueEvent = [date: string, kind: EventKind, text: string, note?: string];
+export interface Point { d: string; v: number }
+export interface Dept { id: string; name: string; orphan?: boolean }
+
+// 이슈 한 건. 데이터 파일에 적는 값 + 아래에서 계산해 붙이는 값 + 화면이 편집 중에 붙이는 값
+export interface Issue {
+  id: string; title: string; dept: string; area: string; owner?: string; status: Status;
+  langs: string[]; topic: string; shape: [string, number][]; events: IssueEvent[]; why: string;
+  range?: [string, string]; reviews: [string, number, string][]; situation?: string;
+  // 계산되는 값
+  series?: Point[]; total?: number; first?: string; trend?: number | null;
+  // 화면에서 편집·첨부하면서 붙는 값
+  [extra: string]: any;
+}
+
 const TODAY='2026-09-30';
 const ME='김재민';
-const DEPTS=[
+const DEPTS: Dept[]=[
   {id:'thinq',name:'THINQ 개발부'},
   {id:'aircon',name:'에어컨 개발부'},
   {id:'washer',name:'세탁기 개발부'},
   {id:'l10n',name:'번역부',orphan:true}
 ];
-const ST={reopen:{t:'재발',r:0},new:{t:'신규',r:1},open:{t:'진행',r:2},watch:{t:'관찰',r:3},done:{t:'해결됨',r:4}};
-const EV={detect:{c:'var(--warn)',t:'감지'},mail:{c:'var(--ink-2)',t:'알림'},fix:{c:'var(--good)',t:'해결 처리'},reopen:{c:'var(--crit)',t:'재발'},press:{c:'var(--ink-3)',t:'보도'},hypo:{c:'var(--line-2)',t:'가상'}};
+const ST: Record<Status,{t:string;r:number}>={reopen:{t:'재발',r:0},new:{t:'신규',r:1},open:{t:'진행',r:2},watch:{t:'관찰',r:3},done:{t:'해결됨',r:4}};
+const EV: Record<EventKind,{c:string;t:string}>={detect:{c:'var(--warn)',t:'감지'},mail:{c:'var(--ink-2)',t:'알림'},fix:{c:'var(--good)',t:'해결 처리'},reopen:{c:'var(--crit)',t:'재발'},press:{c:'var(--ink-3)',t:'보도'},hypo:{c:'var(--line-2)',t:'가상'}};
 
-const I=[
+const I: Issue[]=[
   {id:'VOC-231',title:'기기 연결이 끊긴 뒤 다시 연결되지 않음',dept:'thinq',area:'서버·인프라',owner:'김재민',status:'reopen',langs:['영어권','스페인어권','한국','독일'],topic:'연결 끊김·재연동',
    shape:[['2026-09-01',3],['2026-09-02',38],['2026-09-06',22],['2026-09-12',14],['2026-09-18',4],['2026-09-24',3],['2026-09-27',19],['2026-09-30',31]],
    events:[['2026-09-02','detect','관련 리뷰 38건 증가가 감지됨','하루 평균 3건 → 38건'],['2026-09-02','mail','THINQ 개발부에 관련해서 메일이 발송됨',''],['2026-09-18','fix','담당자 해결 처리 완료','이후 하루 3~4건으로 감소'],['2026-09-27','reopen','해결 처리 후 다시 증가','중요도 올림 / 재알림 발송']],
@@ -73,11 +90,11 @@ const I=[
 ];
 
 // daily series from piecewise shape
-const D=864e5,t=s=>Date.parse(s),iso=x=>new Date(x).toISOString().slice(0,10);
+const D=864e5,t=(s: string)=>Date.parse(s),iso=(x: number)=>new Date(x).toISOString().slice(0,10);
 let seed=11;const rnd=()=>{seed=(seed*16807)%2147483647;return(seed-1)/2147483646};
 I.forEach(it=>{
   const [a,b]=it.range||['2026-09-01',TODAY];
-  const pts=it.shape.map(([d,v])=>[t(d),v]);
+  const pts=it.shape.map(([d,v])=>[t(d),v] as [number,number]);
   it.series=[];
   for(let x=t(a);x<=t(b);x+=D){
     let v;const k=pts.findIndex(p=>p[0]>=x);
@@ -92,29 +109,29 @@ I.forEach(it=>{
   const s=it.series,last7=s.slice(-7).reduce((a,p)=>a+p.v,0),prev7=s.slice(-14,-7).reduce((a,p)=>a+p.v,0);
   it.trend=prev7?Math.round((last7-prev7)/prev7*100):null;
 });
-const need=it=>it.status!=='done';
-const deptName=id=>DEPTS.find(d=>d.id===id).name;
-const md=d=>`${+d.slice(5,7)}/${+d.slice(8,10)}`;
+const need=(it: Issue)=>it.status!=='done';
+const deptName=(id: string)=>DEPTS.find(d=>d.id===id)!.name;
+const md=(d: string)=>`${+d.slice(5,7)}/${+d.slice(8,10)}`;
 
-function prio(it){
+function prio(it: Issue){
   const base={reopen:60,new:40,open:20,watch:0,done:0}[it.status];
   const grow=Math.round(Math.min(Math.max(it.trend||0,0),300)/10);
   const lang=Math.min(it.langs.length*3,12);
   const orphan=it.dept==='l10n'?5:0;
   const score=base+grow+lang+orphan;
-  const lv=score>=70?['p1','긴급']:score>=45?['p2','높음']:score>=25?['p3','보통']:['p4','낮음'];
-  return {score,cls:lv[0],label:lv[1],parts:[[ST[it.status].t,base],['7일 증가',grow],['언어권 '+it.langs.length+'개',lang],...(orphan?[['담당 없음',orphan]]:[])]};
+  const lv: [string,string]=score>=70?['p1','긴급']:score>=45?['p2','높음']:score>=25?['p3','보통']:['p4','낮음'];
+  return {score,cls:lv[0],label:lv[1],parts:[[ST[it.status].t,base] as [string,number],['7일 증가',grow],['언어권 '+it.langs.length+'개',lang],...(orphan?[['담당 없음',orphan]]:[])]};
 }
-const fixDate=it=>{const f=[...it.events].reverse().find(e=>e[1]==='fix');return f?f[0]:''};
+const fixDate=(it: Issue)=>{const f=[...it.events].reverse().find(e=>e[1]==='fix');return f?f[0]:''};
 
 // ---------- 화면 증거 (목업: 자동 재현 연동 전) ----------
-const SCREEN={'연결 끊김·재연동':['기기 연결 상태 화면',0,'특정 시간·기기·네트워크에서만 생겨 재현이 어렵습니다. 오류 화면만 캡처할 수 있습니다.'],
+const SCREEN: Record<string,[string,number,string]>={'연결 끊김·재연동':['기기 연결 상태 화면',0,'특정 시간·기기·네트워크에서만 생겨 재현이 어렵습니다. 오류 화면만 캡처할 수 있습니다.'],
   '에어컨·냉장고 제어':['에어컨 제어 화면',0,'등록된 에어컨과 서버 상태가 필요해 조건부로만 재현됩니다.'],
   '날짜·시간 규격':['기기 예약 설정 화면',1,'언어·지역 설정만 바꾸면 누구 기기에서나 같은 화면이 나옵니다.'],
   '계정·국가 제한':['계정 · 국가/지역 설정 화면',1,'테스트 계정으로 설정 화면까지 이동하면 재현됩니다.'],
   '계정·로그인':['로그인 화면',1,'앱 업데이트 직후 흐름이라 설치 상태에서 재현됩니다.'],
   '세탁기·건조기':['세탁 완료 알림 설정 화면',0,'알림 누락은 실제 세탁 완료 시점이 필요해 화면 캡처만으로는 부족합니다.']};
-const LOCALE={'영어권':'en-US','스페인어권':'es-ES','브라질':'pt-BR','한국':'ko-KR','독일':'de-DE','프랑스':'fr-FR','이탈리아':'it-IT','네덜란드':'nl-NL','튀르키예':'tr-TR','러시아':'ru-RU','중동(아랍어권)':'ar-SA'};
-const scr=it=>SCREEN[it.topic]||['관련 화면 (매핑 필요)',0,'이슈와 앱 화면 연결 정보가 아직 없습니다.'];
+const LOCALE: Record<string,string>={'영어권':'en-US','스페인어권':'es-ES','브라질':'pt-BR','한국':'ko-KR','독일':'de-DE','프랑스':'fr-FR','이탈리아':'it-IT','네덜란드':'nl-NL','튀르키예':'tr-TR','러시아':'ru-RU','중동(아랍어권)':'ar-SA'};
+const scr=(it: Issue)=>SCREEN[it.topic]||['관련 화면 (매핑 필요)',0,'이슈와 앱 화면 연결 정보가 아직 없습니다.'];
 
 export { TODAY, ME, DEPTS, ST, EV, I, need, deptName, md, prio, fixDate, SCREEN, LOCALE, scr };

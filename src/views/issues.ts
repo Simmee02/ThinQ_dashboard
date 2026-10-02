@@ -1,10 +1,11 @@
 // VoC 이슈 관리(#issues): KPI, 이슈 표, 상세 Drawer(세부 내용·처리·분석·메일)
-import { TODAY, ME, DEPTS, ST, EV, I, need, deptName, md, prio, fixDate, LOCALE, scr } from '../data/issues.js';
-import { $, esc, toast } from '../shared/ui.js';
-import { go, setParam } from '../router.js';
-import { refresh as refreshReport, goReport, buildReport } from './report.js';
+import { TODAY, ME, DEPTS, ST, EV, I, need, deptName, md, prio, fixDate, LOCALE, scr } from '../data/issues';
+import type { IssueEvent } from '../data/issues';
+import { $, esc, toast } from '../shared/ui';
+import { go, setParam } from '../router';
+import { refresh as refreshReport, goReport, buildReport } from './report';
 
-const state={dept:'all',f:'need',q:null,sel:null};
+const state: { dept: string; f: string; q: string | null; sel: string | null; text?: string } = { dept: 'all', f: 'need', q: null, sel: null };
 const prPill=it=>{if(it.status==='done')return `<span class="pr arch">아카이브</span>`;const p=prio(it);return `<span class="pr ${p.cls}">${p.label}<span class="sc">${p.score}</span></span>`};
 function visible(){
   if(state.f==='archive')return I.filter(it=>!need(it)&&(state.dept==='all'||it.dept===state.dept)).sort((a,b)=>fixDate(b).localeCompare(fixDate(a)));
@@ -34,7 +35,7 @@ function renderTop(){
   $('v-orphan').textContent=live.filter(i=>i.dept==='l10n').length;
   const hot=live.filter(i=>i.status==='reopen'||i.status==='new').length;
   $('bell-n').textContent=hot;$('bell-n').hidden=!hot;
-  document.querySelectorAll('#view-is .stat').forEach(b=>b.setAttribute('aria-pressed',state.f!=='archive'&&!!state.q&&state.q===b.dataset.q));
+  document.querySelectorAll<HTMLElement>('#view-is .stat').forEach(b=>b.setAttribute('aria-pressed',state.f!=='archive'&&!!state.q&&state.q===b.dataset.q));
   const sel=$('dept-sel');
   sel.innerHTML=[{id:'all',name:'전체 부서'},...DEPTS].map(d=>{const n=I.filter(it=>need(it)&&(d.id==='all'||it.dept===d.id)).length;return `<option value="${d.id}" ${state.dept===d.id?'selected':''}>${d.name} (${n})</option>`}).join('');
   $('arch-n').textContent=I.filter(it=>!need(it)).length;$('f-arch').setAttribute('aria-pressed',state.f==='archive');
@@ -42,7 +43,7 @@ function renderTop(){
 
 const drawerOpen=()=>!$('drawer').hidden;
 function openDrawer(id){setParam(id);state.sel=id;const oi=I.find(i=>i.id===id);if(oi){oi.editing=false;oi.pendingDone=false;oi.err='';oi.pick=null}$('drawer').hidden=false;$('scrim').hidden=false;renderList();$('drawer').scrollTop=0;$('dr-close').focus()}
-function closeDrawer(){setParam('');const last=state.sel;$('drawer').hidden=true;$('scrim').hidden=true;state.sel=null;renderList();const r=last&&document.querySelector(`#view-is tr[data-id="${last}"]`);if(r)r.focus()}
+function closeDrawer(){setParam('');const last=state.sel;$('drawer').hidden=true;$('scrim').hidden=true;state.sel=null;renderList();const r=last&&document.querySelector<HTMLElement>(`#view-is tr[data-id="${last}"]`);if(r)r.focus()}
 
 function renderList(){
   const txt=(state.text||'').toLowerCase();
@@ -74,7 +75,7 @@ function chart(it,s){
   let g='';
   s.forEach((p,i)=>{const h=y(0)-y(p.v),r=Math.min(2,bw/2,h);
     g+=`<path data-i="${i}" d="M${x(i)-bw/2},${y(0)} V${y(p.v)+r} Q${x(i)-bw/2},${y(p.v)} ${x(i)-bw/2+r},${y(p.v)} H${x(i)+bw/2-r} Q${x(i)+bw/2},${y(p.v)} ${x(i)+bw/2},${y(p.v)+r} V${y(0)} Z" fill="var(--bar-hi)" opacity=".55"/>`});
-  const evIdx={};it.events.forEach(e=>{const i=s.findIndex(p=>p.d===e[0]);if(i>=0)(evIdx[i]=evIdx[i]||[]).push(e)});
+  const evIdx: Record<number, IssueEvent[]>={};it.events.forEach(e=>{const i=s.findIndex(p=>p.d===e[0]);if(i>=0)(evIdx[i]=evIdx[i]||[]).push(e)});
   Object.entries(evIdx).forEach(([i,es])=>{const e=es.find(z=>z[1]!=='mail'&&z[1]!=='hypo');if(!e)return;const c=EV[e[1]].c;
     g+=`<line x1="${x(i)}" x2="${x(i)}" y1="${T-6}" y2="${y(0)}" stroke="${c}" stroke-width="1.25"/><circle cx="${x(i)}" cy="${T-8}" r="4" fill="${c}"/>`});
   g+=`<line x1="${L}" x2="${Wd-R}" y1="${y(0)}" y2="${y(0)}" stroke="var(--line)"/>`;
@@ -215,7 +216,7 @@ function assignPerson(it,role,n){
   if(n!==prev){it.editedAt=fmtDate(new Date());it.editedBy=ME;it.log.push([ME,n?`${rl} ${pLabel(n)}`:`${rl} 지정 해제`,nowStr()]);toast(n?`${rl}를 ${pLabel(n)}(으)로 지정했습니다`:`${rl} 지정을 해제했습니다`)}
   if(it.pendingDone)it.err=!it.owner?'처리 완료하려면 먼저 대응 담당자를 지정해 주세요.':!it.memo?'무엇을 했는지 메모를 남기고 저장해 주세요. 재발 판단의 기준이 됩니다.':'';
   render();
-  const b=document.querySelector(`#detail [data-pick="${role}"]`);if(b)b.focus();
+  const b=document.querySelector<HTMLElement>(`#detail [data-pick="${role}"]`);if(b)b.focus();
 }
 const PENCIL='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
 function opsHTML(it){
@@ -248,16 +249,16 @@ function opsHTML(it){
 function bindOps(it){
   $('o-run').onclick=()=>{const n=Math.min(it.total,60);it.rev={n,m:Math.round(n*(0.78+((it.id.charCodeAt(6)%7)/50)))};it.log.push(['에이전트','원문 재검토 실행',nowStr()]);renderDetail()};
   $('o-edit').onclick=()=>{it.editing=!it.editing;if(!it.editing){it.pendingDone=false;it.err=''}renderDetail();if(it.editing)$('o-dept').focus();else $('o-edit').focus()};
-  const togglePick=role=>{it.pick=it.pick===role?null:role;renderDetail();if(it.pick)$('pk-q').focus();else{const b=document.querySelector(`#detail [data-pick="${role}"]`);if(b)b.focus()}};
-  document.querySelectorAll('#detail [data-pick]').forEach(b=>b.onclick=()=>togglePick(b.dataset.pick));
+  const togglePick=role=>{it.pick=it.pick===role?null:role;renderDetail();if(it.pick)$('pk-q').focus();else{const b=document.querySelector<HTMLElement>(`#detail [data-pick="${role}"]`);if(b)b.focus()}};
+  document.querySelectorAll<HTMLElement>('#detail [data-pick]').forEach(b=>b.onclick=()=>togglePick(b.dataset.pick));
   $('o-rev').onclick=()=>togglePick('rev');$('o-own').onclick=()=>togglePick('own');
   if(it.pick){
     const role=it.pick;
     $('pk-q').oninput=()=>{const q=$('pk-q').value.trim().toLowerCase();let any=false;
-      document.querySelectorAll('#pk-list .pk-g').forEach(g=>{let n=0;g.querySelectorAll('.pk-i').forEach(b=>{const ok=!q||b.dataset.k.toLowerCase().includes(q);b.hidden=!ok;if(ok)n++});g.hidden=!n;if(n)any=true});
+      document.querySelectorAll<HTMLElement>('#pk-list .pk-g').forEach(g=>{let n=0;g.querySelectorAll<HTMLElement>('.pk-i').forEach(b=>{const ok=!q||b.dataset.k.toLowerCase().includes(q);b.hidden=!ok;if(ok)n++});g.hidden=!n;if(n)any=true});
       $('pk-empty').hidden=any};
-    $('pk-q').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();const f=document.querySelector('#pk-list .pk-i:not([hidden])');if(f)f.focus()}};
-    document.querySelectorAll('#pk-list .pk-i').forEach(b=>b.onclick=()=>assignPerson(it,role,b.dataset.n));
+    $('pk-q').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();const f=document.querySelector<HTMLElement>('#pk-list .pk-i:not([hidden])');if(f)f.focus()}};
+    document.querySelectorAll<HTMLElement>('#pk-list .pk-i').forEach(b=>b.onclick=()=>assignPerson(it,role,b.dataset.n));
     $('pk-close').onclick=()=>togglePick(role);
     if($('pk-clear'))$('pk-clear').onclick=()=>assignPerson(it,role,'');
   }
@@ -316,11 +317,11 @@ function bindShot(it){
 
 // ---------- 이벤트 연결 ----------
 $('f-arch').onclick=()=>{state.f=state.f==='archive'?'need':'archive';state.q=null;state.sel=null;render()};
-document.querySelectorAll('#view-is .stat').forEach(b=>b.onclick=()=>{const q=b.dataset.q;state.q=(q==='need'||(state.q===q&&state.f!=='archive'))?null:q;state.f='need';state.sel=null;render()});
+document.querySelectorAll<HTMLElement>('#view-is .stat').forEach(b=>b.onclick=()=>{const q=b.dataset.q;state.q=(q==='need'||(state.q===q&&state.f!=='archive'))?null:q;state.f='need';state.sel=null;render()});
 $('open-case').onclick=()=>{state.dept='all';state.f='archive';state.q=null;render();openDrawer('VOC-201')};
 $('dept-sel').onchange=()=>{state.dept=$('dept-sel').value;render()};
 $('dr-close').onclick=closeDrawer;$('scrim').onclick=closeDrawer;
-document.addEventListener('keydown',e=>{if(e.key!=='Escape'||!drawerOpen())return;const it=I.find(i=>i.id===state.sel);if(it&&it.pick){const r=it.pick;it.pick=null;renderDetail();const b=document.querySelector(`#detail [data-pick="${r}"]`);if(b)b.focus();return}closeDrawer()});
+document.addEventListener('keydown',e=>{if(e.key!=='Escape'||!drawerOpen())return;const it=I.find(i=>i.id===state.sel);if(it&&it.pick){const r=it.pick;it.pick=null;renderDetail();const b=document.querySelector<HTMLElement>(`#detail [data-pick="${r}"]`);if(b)b.focus();return}closeDrawer()});
 $('q-search').addEventListener('input',()=>{state.text=$('q-search').value.trim();renderList()});
 $('bell').onclick=()=>{state.q=null;state.f='need';render();go('report')};
 

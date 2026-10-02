@@ -1,6 +1,6 @@
 // 국가별 시장 분석(#market): 시장 목록, 기본 정보, 국가별 이슈 집중도, 자동 요약
-import { M, V, fill, col } from '../data/markets.js';
-import { go, setParam, currentRoute } from '../router.js';
+import { M, V, fill, col } from '../data/markets';
+import { go, setParam, currentRoute } from '../router';
 
 const TOPICS=['연결 끊김·재연동','세탁기·건조기','에어컨·냉장고 제어','TV 제어·미러링','TV-앱 연동·펌웨어'];
 const BULB='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6"/><path d="M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3Z"/></svg>';
@@ -46,7 +46,7 @@ function draw(){
   $('dt-big').innerHTML=`${a.toFixed(2)}<small> / 5</small>`;
   $('dt-chg').className='chg '+(c<0?'dn':c>0?'up':'');
   $('dt-chg').textContent=`${lbl} 대비 ${c>0?'+':''}${c.toFixed(2)}`;
-  document.querySelectorAll('#dt-seg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.p===per));
+  document.querySelectorAll<HTMLElement>('#dt-seg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.p===per));
   // summary
   let sum;
   if(!topic)sum=`${name}은(는) 분석 리뷰 ${n.toLocaleString('ko-KR')}건으로 표본이 충분하지만 문제 유형가 보류되었습니다. 보류 사유 확인이 필요합니다.`;
@@ -64,10 +64,10 @@ function draw(){
   // review placeholders
   $('dt-reviews').innerHTML=[1,1,2].map((st,k)=>`<div class="rv"><div class="meta"><span class="stars">${'★'.repeat(st)}<span style="color:var(--line-2)">${'★'.repeat(5-st)}</span></span><span>${topic||'이슈 미정'}</span></div><div class="ln" style="width:${92-k*9}%"></div><div class="ln" style="width:${70-k*12}%"></div></div>`).join('');
 }
-document.querySelectorAll('#dt-seg button').forEach(b=>b.onclick=()=>{per=b.dataset.p;draw()});
+document.querySelectorAll<HTMLElement>('#dt-seg button').forEach(b=>b.onclick=()=>{per=b.dataset.p;draw()});
 
 
-$('mk-body').addEventListener('click',e=>{const tr=e.target.closest('tr');if(!tr)return;go('market',tr.dataset.i)});
+$('mk-body').addEventListener('click',e=>{const tr=(e.target as HTMLElement).closest<HTMLElement>('tr');if(!tr)return;go('market',tr.dataset.i)});
 
 // 라우터가 #market 을 보여 줄 때 호출: #market.3 이면 4번째 시장을 엽니다
 export function onShow(param){

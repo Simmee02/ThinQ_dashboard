@@ -8,13 +8,13 @@ import './styles/issues.css';
 import './styles/report.css';
 import './styles/a4.css';
 
-import { VIEWS } from './mount.js';      // 반드시 화면 모듈보다 먼저
-import { register, start } from './router.js';
-import * as trend from './views/trend.js';
-import './views/market-overview.js';
-import * as market from './views/market.js';
-import * as issues from './views/issues.js';
-import * as report from './views/report.js';
+import { VIEWS } from './mount';      // 반드시 화면 모듈보다 먼저
+import { register, start } from './router';
+import * as trend from './views/trend';
+import './views/market-overview';
+import * as market from './views/market';
+import * as issues from './views/issues';
+import * as report from './views/report';
 
 const onShow = { issues: issues.onShow, trend: trend.onShow, market: market.onShow, report: report.onShow };
 for (const [name, view, tab] of VIEWS) register(name, { view, tab, onShow: onShow[name] });

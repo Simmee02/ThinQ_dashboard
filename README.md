@@ -27,24 +27,23 @@ npm run preview    # 빌드 결과 미리 보기
 
 ```
 index.html                 앱 뼈대: 사이드바, 상단바, 화면이 들어갈 <main id="views">
-vite.config.js
+vite.config.ts
 src/
-  main.js                  시작점: 스타일 → 화면 조각 넣기 → 화면 모듈 → 라우터 시작
-  mount.js                 화면 HTML 조각을 문서에 넣음 (main.js에서 가장 먼저 import)
-  router.js                해시 라우터 (register / go / setParam / start)
+  main.ts                  시작점: 스타일 → 화면 조각 넣기 → 화면 모듈 → 라우터 시작
+  mount.ts                 화면 HTML 조각을 문서에 넣음 (main.ts에서 가장 먼저 import)
+  router.ts                해시 라우터 (register / go / setParam / start)
   pages/                   화면별 HTML 조각 (문구·구조는 여기서 고칩니다)
     issues.html            VoC 이슈 관리 + 상세 Drawer
     trend.html             글로벌 VoC 동향
     market.html            글로벌 시장 분석
     report.html            보고서/조치 관리
   views/                   화면별 동작
-    issues.js  report.js  trend.js  market.js  market-overview.js
+    issues.ts  report.ts  trend.ts  market.ts  market-overview.ts
   data/
-    issues.js              이슈 예시 데이터, 우선순위 점수, 화면 매핑  ← 실제 API로 바꿀 곳
-    markets.js             시장 현황 예시 데이터                       ← 실제 API로 바꿀 곳
-  shared/ui.js             $, esc, toast, 복사 도우미
-  styles/                  main.js에서 이 순서로 불러옵니다 (겹치는 규칙의 우선순위가 순서로 정해짐)
+    issues.ts              이슈 예시 데이터, 우선순위 점수, 화면 매핑  ← 실제 API로 바꿀 곳
+    markets.ts             시장 현황 예시 데이터                       ← 실제 API로 바꿀 곳
+  shared/ui.ts             $, esc, toast, 복사 도우미
+  styles/                  main.ts에서 이 순서로 불러옵니다 (겹치는 규칙의 우선순위가 순서로 정해짐)
     tokens.css  fonts.css  base.css  trend.css  market.css  issues.css  report.css  a4.css
   assets/fonts/PretendardSubset.woff2   화면 글자 + 한글 2,350자 서브셋
 ```
-

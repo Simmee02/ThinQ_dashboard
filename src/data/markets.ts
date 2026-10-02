@@ -1,12 +1,16 @@
 // 시장 현황 데이터 (예시 데이터: 데모 표 기준)
 // M 한 줄 = [시장, 리뷰 적음 여부, 분석 리뷰 수, 집중 이슈, 국가별 이슈 집중도, 문제 유형 id, 불만 리뷰 비율]
-export const V=[
+export interface Verdict { id: string; name: string; c: string; dc: string; ink: string; dink: string }
+// [시장, 리뷰 적음 여부, 분석 리뷰 수, 집중 이슈, 국가별 이슈 집중도, 문제 유형 id, 불만 리뷰 비율]
+export type MarketRow = [name: string, small: number, n: number, topic: string | null, lift: number | null, verdict: string, rate: number];
+
+export const V: Verdict[]=[
   {id:'wide',name:'앱 공통 오류',c:'#e5384f',dc:'#ff6b7a',ink:'#fff',dink:'#1c1b20'},
   {id:'multi',name:'다국가 현지화 이슈',c:'#7c3aed',dc:'#a78bfa',ink:'#fff',dink:'#1c1b20'},
   {id:'local',name:'현지화 이슈',c:'#0e9aa7',dc:'#2dd4bf',ink:'#fff',dink:'#1c1b20'},
   {id:'none',name:'판정 보류',c:'none',dc:'none',ink:'#5f5c66',dink:'#aeaab6'}
 ];
-export const M=[
+export const M: MarketRow[]=[
   ['한국',0,2204,'연결 끊김·재연동',3.67,'wide',65.7],
   ['대만',1,227,'세탁기·건조기',3.16,'local',61.7],
   ['중동(아랍어권)',1,391,'연결 끊김·재연동',2.52,'wide',43.2],

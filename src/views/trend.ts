@@ -81,11 +81,11 @@ GROUPS.forEach(g=>{
   };
   chips.appendChild(el);
 });
-document.querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>{if(!b.disabled){state.g=b.dataset.g;render()}});
-document.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{state.view=b.dataset.v;render()});
+document.querySelectorAll<HTMLButtonElement>('[data-g]').forEach(b=>b.onclick=()=>{if(!b.disabled){state.g=b.dataset.g;render()}});
+document.querySelectorAll<HTMLElement>('[data-v]').forEach(b=>b.onclick=()=>{state.view=b.dataset.v;render()});
 document.getElementById('prev').onclick=()=>{state.calM--;if(state.calM<0){state.calM=11;state.calY--}renderCal()};
 document.getElementById('next').onclick=()=>{state.calM++;if(state.calM>11){state.calM=0;state.calY++}renderCal()};
-document.querySelectorAll('#presets button').forEach(b=>b.onclick=()=>{
+document.querySelectorAll<HTMLElement>('#presets button').forEach(b=>b.onclick=()=>{
   const p=b.dataset.p;
   if(p==='evt')setRange(idx['2026-07-06'],idx['2026-07-19']);else setRange(N-(+p),N-1);
 });
@@ -118,8 +118,8 @@ function renderCal(){
   const y=state.calY,m=state.calM;
   document.getElementById('cal-title').textContent=`${y}.${String(m+1).padStart(2,'0')}`;
   const first=Date.UTC(y,m,1),dim=new Date(Date.UTC(y,m+1,0)).getUTCDate();
-  document.getElementById('prev').disabled=first<=START;
-  document.getElementById('next').disabled=Date.UTC(y,m+1,1)>END;
+  (document.getElementById('prev') as HTMLButtonElement).disabled=first<=START;
+  (document.getElementById('next') as HTMLButtonElement).disabled=Date.UTC(y,m+1,1)>END;
   const lead=(new Date(first).getUTCDay()+6)%7;
   const cal=document.getElementById('cal');cal.innerHTML='';
   ['월','화','수','목','금','토','일'].forEach((d,k)=>{const e=document.createElement('div');e.className='dow'+(k===6?' sun':'');e.textContent=d;cal.appendChild(e)});
@@ -128,7 +128,7 @@ function renderCal(){
   for(let d=1;d<=dim;d++){
     const key=iso(Date.UTC(y,m,d)),i=idx[key],col=(lead+d-1)%7;
     const cell=document.createElement('div');cell.className='cell';
-    const el=document.createElement('button');el.className='day';el.textContent=d;el.id='d-'+key;
+    const el=document.createElement('button');el.className='day';el.textContent=String(d);el.id='d-'+key;
     if(i===undefined)el.disabled=true;
     else{
       if(EVENTS[key])el.classList.add('evt');
@@ -159,12 +159,12 @@ const txt=(svg,x,y,s,a)=>{const t=mk('text',Object.assign({x,y,'font-size':11,fi
 
 function niceStep(x){const p=Math.pow(10,Math.floor(Math.log10(x||1))),f=x/p;return(f<=1?1:f<=2?2:f<=5?5:10)*p}
 function renderLine(){
-  ['day','week','month'].forEach(g=>{document.getElementById('g-'+g).disabled=countB(g,state.from,state.to)>MAXB});
-  document.querySelectorAll('[data-g]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.g===state.g));
-  document.querySelectorAll('[data-v]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===state.view));
+  ['day','week','month'].forEach(g=>{(document.getElementById('g-'+g) as HTMLButtonElement).disabled=countB(g,state.from,state.to)>MAXB});
+  document.querySelectorAll<HTMLButtonElement>('[data-g]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.g===state.g));
+  document.querySelectorAll<HTMLElement>('[data-v]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===state.view));
   const list=buckets(state.g,state.from,state.to);
   const tot=list.map(b=>stats(dist(sel(),b.from,b.to)));
-  const series=state.view==='all'
+  const series: { id: string; name: string; c: string; ids: string[]; w: number; pts?: any[] }[]=state.view==='all'
     ?[{id:'all',name:'평균 별점',c:'var(--accent)',ids:sel(),w:2.5}]
     :GROUPS.filter(g=>state.groups.has(g.id)).map(g=>({id:g.id,name:g.name,c:g.c,ids:[g.id],w:2}));
   series.forEach(sr=>sr.pts=list.map((b,j)=>{const o=sr.id==='all'?tot[j]:stats(dist(sr.ids,b.from,b.to));return{b,...o,ok:o.n>=MIN_N}}));
@@ -226,9 +226,9 @@ function renderLine(){
     const head=state.g==='day'?days[b.from]:`${days[b.from]} – ${days[b.to]}`;
     tip.innerHTML=`${head}<div class="row"><i style="background:var(--bar);border-radius:2px"></i>리뷰 수 <b>${fmt(tot[j].n)}건</b></div>`+series.map(sr=>{const p=sr.pts[j];return`<div class="row"><i style="background:${sr.c}"></i>${sr.name} <b>${p.ok?f2(p.avg)+'점':'표본 부족'}</b>${sr.id==='all'?'':`<span class="n">${fmt(p.n)}건</span>`}</div>`}).join('');
     const cx=x(j)*sc-box.scrollLeft,right=cx<box.clientWidth/2;
-    tip.style.left=cx+'px';tip.style.top=(T*sc)+'px';tip.style.transform=right?`translate(${slot*sc/2+8}px,0)`:`translate(calc(-100% - ${slot*sc/2+8}px),0)`;tip.style.opacity=1;
+    tip.style.left=cx+'px';tip.style.top=(T*sc)+'px';tip.style.transform=right?`translate(${slot*sc/2+8}px,0)`:`translate(calc(-100% - ${slot*sc/2+8}px),0)`;tip.style.opacity='1';
   });
-  hit.addEventListener('mouseleave',()=>{tip.style.opacity=0;if(hov>=0)bars[hov].setAttribute('fill','var(--bar)');hov=-1});
+  hit.addEventListener('mouseleave',()=>{tip.style.opacity='0';if(hov>=0)bars[hov].setAttribute('fill','var(--bar)');hov=-1});
   const miss=series.some(sr=>sr.pts.some(p=>!p.ok));
   document.getElementById('line-cap').textContent=(miss?`리뷰가 ${MIN_N}건 미만인 구간은 별점 선을 끊었습니다. `:'')+'위쪽 빨간 삼각형은 장애 보도일입니다.';
 }
@@ -257,6 +257,6 @@ function renderStats({S,A}){
 }
 
 function render(){renderHead();renderCal();if(state.to!==null){renderLine();renderStats(periodSA());window.__vocRange={from:state.from,to:state.to,total:N};window.dispatchEvent(new Event('voc-range'))}}
-window.addEventListener('resize',()=>{document.querySelectorAll('.tip').forEach(t=>t.style.opacity=0)});
+window.addEventListener('resize',()=>{document.querySelectorAll<HTMLElement>('.tip').forEach(t=>t.style.opacity='0')});
 render();
 export function onShow() {}

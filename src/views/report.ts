@@ -1,10 +1,10 @@
 // 보고서 생성(#report): A4 보고서, 개발 이슈 초안(GitHub/Jira), 에이전트 활동, 알림 기록
-import { TODAY, DEPTS, ST, I, need, deptName, md, prio, LOCALE, scr } from '../data/issues.js';
-import { $, esc, toast, fallbackCopy } from '../shared/ui.js';
-import { go } from '../router.js';
+import { TODAY, DEPTS, ST, I, need, deptName, md, prio, LOCALE, scr } from '../data/issues';
+import { $, esc, toast, fallbackCopy } from '../shared/ui';
+import { go } from '../router';
 import a4Css from '../styles/a4.css?raw';
 import fontUrl from '../assets/fonts/PretendardSubset.woff2?url';
-import { state, closeDrawer } from './issues.js';
+import { state, closeDrawer } from './issues';
 
 function renderAlerts(){
   const list=[];
@@ -30,6 +30,8 @@ function miniBars(it){
   const s=it.series.slice(-30),mx=Math.max(...s.map(p=>p.v),1),W=250,H=46,bw=W/s.length;
   return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" aria-hidden="true">${s.map((p,i)=>`<rect x="${(i*bw+1).toFixed(1)}" y="${(H-p.v/mx*(H-4)).toFixed(1)}" width="${Math.max(1,bw-2).toFixed(1)}" height="${(p.v/mx*(H-4)).toFixed(1)}" rx="1" fill="${it.status==='reopen'?'#e10a1e':it.status==='new'?'#c27a00':'#8a8693'}" opacity=".8"/>`).join('')}</svg>`;
 }
+const built = { text: '', rid: '' };
+const outState = { cur: '' };
 function buildReport(){
   const list=reportIssues(),dept=$('rg-dept').value,scope=$('rg-scope').value;
   const live=I.filter(it=>need(it)&&(dept==='all'||it.dept===dept));
@@ -89,36 +91,36 @@ function buildReport(){
   // plain text for copy
   const L=[];L.push(`[ThinQ VOC 이슈 근거 리포트] ${rid}`,`생성 ${TODAY} ${RPT_TIME} · 받는 사람 ${to} · 대상 ${dn} · 범위 ${scopeName}`,'','요약',summary,'');
   list.forEach((it,k)=>{const p=it.status!=='done'?prio(it):null;L.push(`${k+1}. ${it.title} (${it.id})`,`   담당 ${deptName(it.dept)} · 상태 ${ST[it.status].t}${p?` · 우선순위 ${p.label} ${p.score}점`:''} · 관련 리뷰 ${it.total}건 · ${it.langs.join(', ')}`,`   이유: ${it.why}`);it.events.filter(e=>e[1]!=='hypo').forEach(e=>L.push(`   - ${e[0]} ${e[2]}${e[3]?' · '+e[3]:''}`));L.push(`   요청 사항: ${askFor(it)}`,'')});
-  buildReport.text=L.join('\n');buildReport.rid=rid;
+  built.text=L.join('\n');built.rid=rid;
 }
 function fillReportControls(){
   const d=$('rg-dept'),cur=d.value||'all';
   d.innerHTML=[{id:'all',name:'전체 부서'},...DEPTS].map(x=>`<option value="${x.id}" ${x.id===cur?'selected':''}>${x.name}</option>`).join('');
   const is=$('rg-issue'),ci=is.value;
-  is.innerHTML=[...I].sort((a,b)=>(need(b)-need(a))||prio(b).score-prio(a).score).map(it=>`<option value="${it.id}" ${it.id===ci?'selected':''}>${it.id} · ${esc(it.title)}${need(it)?'':' (아카이브)'}</option>`).join('');
+  is.innerHTML=[...I].sort((a,b)=>(Number(need(b))-Number(need(a)))||prio(b).score-prio(a).score).map(it=>`<option value="${it.id}" ${it.id===ci?'selected':''}>${it.id} · ${esc(it.title)}${need(it)?'':' (아카이브)'}</option>`).join('');
   $('rg-one-wrap').hidden=$('rg-scope').value!=='one';
   $('rg-dept').disabled=$('rg-scope').value==='one';
 }
-['rg-dept','rg-scope','rg-issue'].forEach(id=>$(id).addEventListener('change',()=>{fillReportControls();buildReport();if(setOut.cur==='dev')buildDev()}));
+['rg-dept','rg-scope','rg-issue'].forEach(id=>$(id).addEventListener('change',()=>{fillReportControls();buildReport();if(outState.cur==='dev')buildDev()}));
 $('rg-to').addEventListener('input',buildReport);
-$('rg-copy').onclick=()=>{const t=buildReport.text||'';try{navigator.clipboard.writeText(t).then(()=>toast('리포트 텍스트를 복사했습니다'),()=>fallbackCopy(t))}catch(e){fallbackCopy(t)}};
+$('rg-copy').onclick=()=>{const t=built.text||'';try{navigator.clipboard.writeText(t).then(()=>toast('리포트 텍스트를 복사했습니다'),()=>fallbackCopy(t))}catch(e){fallbackCopy(t)}};
 $('rg-html').onclick=async()=>{
   let css='',face='';
   css=a4Css;
   try{const blob=await (await fetch(fontUrl)).blob();const url=await new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(blob)});face=`@font-face{font-family:"Pretendard";font-weight:45 920;src:url(${url}) format("woff2")}`}catch(e){}
-  const doc=`<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>${buildReport.rid}</title><style>${face}body{margin:0;background:#f5f5f7;padding:24px}${css}</style></head><body>${$('a4').outerHTML}</body></html>`;
-  try{const url=URL.createObjectURL(new Blob([doc],{type:'text/html'}));const a=document.createElement('a');a.href=url;a.download=buildReport.rid+'.html';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000);toast('HTML 파일로 저장합니다 · 공유 링크 화면에서는 저장이 막힐 수 있어요')}catch(e){toast('이 화면에서는 저장할 수 없습니다. 내려받은 프로젝트 파일에서 다시 시도해 주세요')}
+  const doc=`<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>${built.rid}</title><style>${face}body{margin:0;background:#f5f5f7;padding:24px}${css}</style></head><body>${$('a4').outerHTML}</body></html>`;
+  try{const url=URL.createObjectURL(new Blob([doc],{type:'text/html'}));const a=document.createElement('a');a.href=url;a.download=built.rid+'.html';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000);toast('HTML 파일로 저장합니다 · 공유 링크 화면에서는 저장이 막힐 수 있어요')}catch(e){toast('이 화면에서는 저장할 수 없습니다. 내려받은 프로젝트 파일에서 다시 시도해 주세요')}
 };
 $('rg-print').onclick=()=>{toast('인쇄 창에서 "PDF로 저장"을 고르세요');try{window.print()}catch(e){}};
 
 
 // ---------- 리포트 탭 이동 + 출력 탭 ----------
 function setOut(o){
-  document.querySelectorAll('#view-rp [data-out]').forEach(b=>b.setAttribute('aria-selected',b.dataset.out===o));
-  document.querySelectorAll('#view-rp [data-for]').forEach(el=>el.hidden=el.dataset.for!==o);
-  setOut.cur=o;if(o==='dev')buildDev();
+  document.querySelectorAll<HTMLElement>('#view-rp [data-out]').forEach(b=>b.setAttribute('aria-selected',b.dataset.out===o));
+  document.querySelectorAll<HTMLElement>('#view-rp [data-for]').forEach(el=>el.hidden=el.dataset.for!==o);
+  outState.cur=o;if(o==='dev')buildDev();
 }
-document.querySelectorAll('#view-rp [data-out]').forEach(b=>b.onclick=()=>setOut(b.dataset.out));
+document.querySelectorAll<HTMLElement>('#view-rp [data-out]').forEach(b=>b.onclick=()=>setOut(b.dataset.out));
 function goReport(id,out){closeDrawer();$('rg-scope').value='one';fillReportControls();$('rg-issue').value=id;buildReport();setOut(out);go('report');toast(out==='dev'?`${id} 개발 이슈 초안을 만들었습니다 · A4 보고서 탭도 있어요`:`${id} A4 보고서를 만들었습니다`)}
 
 // ---------- 개발 이슈 초안 (GitHub / Jira) ----------
@@ -142,6 +144,7 @@ function devDraft(it){
   return {title,labels,team,prio:p?`${p.label} ${p.score}점`:'아카이브',md:L.join('\n')};
 }
 const toJira=md=>md.replace(/^## (.*)$/gm,'h2. $1').replace(/^- /gm,'* ').replace(/^> (.*)$/gm,'bq. $1').replace(/^---$/gm,'----');
+const devBuilt = { text: '' };
 function buildDev(){
   const one=$('rg-scope').value==='one',it=one?I.find(i=>i.id===$('rg-issue').value):null;
   $('dev-empty').hidden=!!it;$('dev-body').hidden=!it;if(!it)return;
@@ -149,7 +152,7 @@ function buildDev(){
   $('dev-title').textContent=d.title;$('dev-team').textContent=d.team;$('dev-prio').textContent=d.prio;
   $('dev-labels').innerHTML=d.labels.map(l=>`<i>${esc(l)}</i>`).join('');
   $('dev-md').textContent=(jira?'':'# ')+d.title+'\n\n'+body;
-  buildDev.text=d.title+'\n\n'+body;
+  devBuilt.text=d.title+'\n\n'+body;
   const repo=$('dev-repo').value.trim(),valid=/^[\w.-]+\/[\w.-]+$/.test(repo),a=$('dev-open');
   $('dev-repo-wrap').hidden=jira;a.hidden=jira;
   $('dev-note').textContent=jira?'Jira 위키 형식으로 바꿨습니다. 본문 복사 후 Jira 새 티켓의 설명란에 붙여 넣으세요. 사진는 티켓을 만든 뒤 첨부하세요.':(valid?'새 탭에서 제목·본문·라벨이 채워진 GitHub 새 이슈 화면이 열립니다. 라벨은 저장소에 미리 있어야 붙습니다. 캡처는 이슈를 만든 뒤 첨부하세요.':'저장소를 owner/repo 형식으로 입력하면 GitHub 새 이슈 화면을 바로 열 수 있습니다.');
@@ -157,11 +160,11 @@ function buildDev(){
 }
 ['dev-target'].forEach(id=>$(id).addEventListener('change',buildDev));
 $('dev-repo').addEventListener('input',buildDev);
-$('dev-copy').onclick=()=>{const t=buildDev.text||'';try{navigator.clipboard.writeText(t).then(()=>toast('개발 이슈 본문을 복사했습니다'),()=>fallbackCopy(t))}catch(e){fallbackCopy(t)}};
+$('dev-copy').onclick=()=>{const t=devBuilt.text||'';try{navigator.clipboard.writeText(t).then(()=>toast('개발 이슈 본문을 복사했습니다'),()=>fallbackCopy(t))}catch(e){fallbackCopy(t)}};
 
 
 // 이슈 데이터가 바뀔 때마다 이슈 화면이 부릅니다
-export function refresh(){renderAlerts();fillReportControls();buildReport();if(setOut.cur==='dev')buildDev()}
+export function refresh(){renderAlerts();fillReportControls();buildReport();if(outState.cur==='dev')buildDev()}
 export function onShow(){}
 
 export { goReport, buildReport };

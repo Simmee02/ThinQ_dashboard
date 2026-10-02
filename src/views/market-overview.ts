@@ -1,6 +1,7 @@
 // 글로벌 VoC 동향 하단 '시장 현황': 문제 유형 요약 막대 + 시장별 집중 이슈 표
-import { V, M, col, ink, fill } from '../data/markets.js';
-import { redrawDetail } from './market.js';
+import { V, M, col, ink, fill } from '../data/markets';
+import type { MarketRow } from '../data/markets';
+import { redrawDetail } from './market';
 
 let filter=null;
 const count=id=>M.filter(m=>m[5]===id).length;
@@ -17,7 +18,7 @@ function rows(){
     const n2=Math.max(1,Math.round(n*ratio*(0.8+0.4*jit(i,1,r.from,r.to))));
     const lift2=lift?Math.min(LMAX-0.05,Math.max(0.3,lift*(0.7+0.6*jit(i,2,r.from,r.to)))):lift;
     const rate2=Math.min(95,Math.max(20,rate+(jit(i,3,r.from,r.to)-0.5)*14));
-    return {m:[name,small,n2,topic,lift2,vid,rate2],i};
+    return {m:[name,small,n2,topic,lift2,vid,rate2] as MarketRow,i};
   }).sort((a,b)=>(b.m[4]||0)-(a.m[4]||0));
 }
 
@@ -27,7 +28,7 @@ function draw(){
   V.forEach(v=>{
     const n=count(v.id);if(!n)return;
     const b=document.createElement('button');b.className='vseg'+(filter&&filter!==v.id?' dim':'');b.id='vseg-'+v.id;
-    b.style.flex=n;b.style.background=fill(v);b.style.color=ink(v);
+    b.style.flex=String(n);b.style.background=fill(v);b.style.color=ink(v);
     b.innerHTML=`<span>${n>=2?v.name:''}</span><b>${n}</b>`;
     b.title=`${v.name} ${n}개 시장`;b.setAttribute('aria-label',`${v.name} ${n}개 시장`);
     b.onclick=()=>{filter=filter===v.id?null:v.id;draw()};
@@ -46,7 +47,7 @@ function draw(){
   const body=document.getElementById('mk-body');body.innerHTML='';
   rows().forEach(({m,i},rk)=>{
     const [name,small,n,topic,lift,vid,rate]=m,v=V.find(x=>x.id===vid);
-    const tr=document.createElement('tr');tr.dataset.i=i;tr.title='눌러서 시장 상세 보기';if(filter&&filter!==vid)tr.className='hide';
+    const tr=document.createElement('tr');tr.dataset.i=String(i);tr.title='눌러서 시장 상세 보기';if(filter&&filter!==vid)tr.className='hide';
     const pillStyle=vid==='none'?'background:transparent;border-color:var(--line-2);color:var(--ink-3)':`background:color-mix(in oklab, ${col(v)} 16%, var(--surface));color:var(--ink)`;
     tr.innerHTML=`<td class="rk">${rk+1}</td>
       <td><div class="mname">${name}${small?'<span class="small-badge">리뷰 적음</span>':''}</div></td>
