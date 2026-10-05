@@ -17,8 +17,8 @@ export const LANG_GROUP = ['영어권', '스페인어권', '중동(아랍어권)
 
 // 목표별 공통 지표 (어떤 이슈든 이 목표라면 먼저 볼 것)
 const BASE: Record<Goal, (topic: string) => Metric> = {
-  retain: t => ({ name: `${t} 경험 여부별 30일 리텐션`, why: '이 이슈가 실제로 사용 중단으로 이어지는지 확인합니다. 리뷰만으로는 알 수 없는 부분입니다.', rule: '경험한 사용자가 뚜렷이 낮으면 장벽으로 확정', src: '앱 사용 로그 + 기기 로그', goals: ['retain'] }),
-  onboard: t => ({ name: `${t} 관련 첫 연동 성공률`, why: '처음 연결하는 단계에서 이 이슈로 막히는지 확인합니다.', rule: '다른 시장보다 낮으면 연동 단계 장벽으로 확정', src: '기기 등록 로그', goals: ['onboard'] }),
+  retain: t => ({ name: `${t} 경험 여부별 30일 리텐션`, why: '이 이슈가 실제로 사용 중단으로 이어지는지 확인합니다. 리뷰만으로는 알 수 없는 부분입니다.', rule: '경험한 사용자가 뚜렷이 낮으면 현지화 니즈로 확정', src: '앱 사용 로그 + 기기 로그', goals: ['retain'] }),
+  onboard: t => ({ name: `${t} 관련 첫 연동 성공률`, why: '처음 연결하는 단계에서 이 이슈로 막히는지 확인합니다.', rule: '다른 시장보다 낮으면 연동 단계 현지화 니즈로 확정', src: '기기 등록 로그', goals: ['onboard'] }),
   update: t => ({ name: `업데이트 후 7일 내 ${t} 오류율`, why: '업데이트 직후에 이 이슈가 늘어나는지 확인합니다.', rule: '직전 버전보다 높으면 업데이트가 원인 후보', src: '크래시·오류 로그', goals: ['update'] }),
 };
 
@@ -27,7 +27,7 @@ const POOL: Record<string, { metrics: Metric[]; solutions: Solution[] }> = {
     metrics: [
       { name: '기기 검색 단계 실패율', why: '앱이 기기를 아예 찾지 못하는 경우가 실제로 많은지 봅니다.', rule: '다른 시장보다 높으면 검색·페어링 흐름 점검', src: '기기 등록 로그', goals: ['onboard', 'retain'] },
       { name: 'Wi-Fi 대역(2.4/5GHz)별 등록 실패율', why: '공유기 대역 설정 때문에 연결이 막히는지 확인합니다.', rule: '5GHz에 몰리면 대역 안내 부족', src: '기기 등록 로그', goals: ['onboard'] },
-      { name: '기기 인식 실패 경험자의 30일 리텐션', why: '처음에 막힌 사용자가 다시 돌아오는지 봅니다.', rule: '경험자가 뚜렷이 낮으면 장벽으로 확정', src: '앱 사용 로그', goals: ['retain'] },
+      { name: '기기 인식 실패 경험자의 30일 리텐션', why: '처음에 막힌 사용자가 다시 돌아오는지 봅니다.', rule: '경험자가 뚜렷이 낮으면 현지화 니즈로 확정', src: '앱 사용 로그', goals: ['retain'] },
       { name: '업데이트 후 기기 인식 실패율', why: '업데이트 뒤 기존 기기를 못 찾는 경우를 봅니다.', rule: '직전 버전보다 높으면 회귀 문제', src: '기기 등록 로그', goals: ['update'] },
     ],
     solutions: [
@@ -107,7 +107,7 @@ const POOL: Record<string, { metrics: Metric[]; solutions: Solution[] }> = {
       { name: 'TV 모델·webOS 버전별 연동 실패율', why: '특정 모델이나 펌웨어에서만 실패하는지 봅니다.', rule: '특정 버전에 몰리면 펌웨어 호환성 문제', src: 'TV 연결 로그', goals: ['onboard', 'update'] },
       { name: '연동 단계별 중도 이탈(검색·인증·등록)', why: '어느 단계에서 포기하는지 찾습니다.', rule: '가장 많이 빠지는 단계를 개선 대상으로', src: '앱 이벤트 로그', goals: ['onboard'] },
       { name: '펌웨어 업데이트 직후 연동 실패 비율', why: '"업데이트 후 연결이 안 된다"는 리뷰 신호를 확인합니다.', rule: '업데이트 직후 급증하면 배포 전 점검 필요', src: 'TV 연결 로그', goals: ['update'] },
-      { name: 'TV 연동 사용자의 30일 리텐션', why: 'TV 연동이 끊긴 사용자가 앱을 덜 쓰는지 봅니다.', rule: '연동 실패 경험자가 뚜렷이 낮으면 장벽 확정', src: '앱 사용 로그', goals: ['retain'] },
+      { name: 'TV 연동 사용자의 30일 리텐션', why: 'TV 연동이 끊긴 사용자가 앱을 덜 쓰는지 봅니다.', rule: '연동 실패 경험자가 뚜렷이 낮으면 현지화 니즈 확정', src: '앱 사용 로그', goals: ['retain'] },
     ],
     solutions: [
       { name: '연동 실패 단계별 안내', what: '같은 Wi-Fi·같은 계정·허브 지원 TV 여부를 단계마다 확인해 줍니다.', measure: '연동 단계별 중도 이탈(검색·인증·등록)', goals: ['onboard'] },

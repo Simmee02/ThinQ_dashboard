@@ -1,14 +1,27 @@
-// 글로벌 VoC 동향(#trend): 요약 카드, 언어권 칩, 기간 달력, 리뷰 수·평균 별점 그래프
+// VoC 분석 > 기간별 리뷰 추이: 요약 카드, 기간 달력, 리뷰 수·평균 별점 그래프 (고른 시장 하나 기준)
 // views/trend.html 이 문서에 들어간 뒤 main.js 가 이 모듈을 불러옵니다.
+// 시장(언어권)별 수집 리뷰 수·불만 비율 (meta.json) · VoC 분석에서 고른 시장 하나만 그립니다
 const GROUPS=[
-  {id:'en',name:'영어권',total:24375,rate:.646,c:'var(--s1)'},
-  {id:'es',name:'스페인어권',total:12647,rate:.49,c:'var(--s2)'},
-  {id:'br',name:'브라질',total:12285,rate:.479,c:'var(--s3)'},
-  {id:'kr',name:'한국',total:4431,rate:.657,c:'var(--s4)'},
-  {id:'etc',name:'기타',total:19302,rate:.58,c:'var(--s5)'}
+  {id:'en',name:'영어권',total:24375,rate:0.646,c:'var(--s1)'},
+  {id:'br',name:'브라질',total:12285,rate:0.479,c:'var(--s1)'},
+  {id:'es',name:'스페인어권',total:12647,rate:0.490,c:'var(--s1)'},
+  {id:'ru',name:'러시아',total:3070,rate:0.623,c:'var(--s1)'},
+  {id:'de',name:'독일',total:1797,rate:0.707,c:'var(--s1)'},
+  {id:'kr',name:'한국',total:4431,rate:0.657,c:'var(--s1)'},
+  {id:'fr',name:'프랑스',total:2208,rate:0.509,c:'var(--s1)'},
+  {id:'it',name:'이탈리아',total:1273,rate:0.595,c:'var(--s1)'},
+  {id:'tr',name:'튀르키예',total:1219,rate:0.644,c:'var(--s1)'},
+  {id:'pl',name:'폴란드',total:1051,rate:0.615,c:'var(--s1)'},
+  {id:'nl',name:'네덜란드',total:594,rate:0.536,c:'var(--s1)'},
+  {id:'ar',name:'중동(아랍어권)',total:2111,rate:0.432,c:'var(--s1)'},
+  {id:'cz',name:'체코',total:490,rate:0.604,c:'var(--s1)'},
+  {id:'vn',name:'베트남',total:1076,rate:0.513,c:'var(--s1)'},
+  {id:'id',name:'인도네시아',total:852,rate:0.405,c:'var(--s1)'},
+  {id:'hu',name:'헝가리',total:374,rate:0.664,c:'var(--s1)'},
+  {id:'tw',name:'대만',total:504,rate:0.617,c:'var(--s1)'}
 ];
 const EVENTS={'2026-07-07':'7/7 23:30','2026-07-12':'7/12 23:10','2026-07-13':'7/13 23:10'};
-const SPIKE={'2026-07-07':{kr:140,en:6},'2026-07-08':{kr:210,en:14,etc:8},'2026-07-12':{kr:260,en:10},'2026-07-13':{kr:520,en:22,etc:12},'2026-07-14':{kr:380,en:18,etc:10},'2026-07-15':{kr:90}};
+const SPIKE={'2026-07-07':{kr:140,en:6},'2026-07-08':{kr:210,en:14,tr:8},'2026-07-12':{kr:260,en:10},'2026-07-13':{kr:520,en:22,tr:12},'2026-07-14':{kr:380,en:18,tr:10},'2026-07-15':{kr:90}};
 
 const DAY=864e5, START=Date.UTC(2023,8,24), END=Date.UTC(2026,8,22);
 const N=Math.round((END-START)/DAY)+1;
@@ -42,7 +55,7 @@ GROUPS.forEach(g=>{
   star[g.id]=st;
 });
 
-const state={groups:new Set(GROUPS.map(g=>g.id)),g:'day',view:'all',from:idx['2026-07-01'],to:idx['2026-07-21'],pending:false,hover:null,calY:2026,calM:6};
+const state={groups:new Set(['kr']),g:'day',view:'all',from:idx['2026-07-01'],to:idx['2026-07-21'],pending:false,hover:null,calY:2026,calM:6};
 const fmt=n=>Math.round(n).toLocaleString('ko-KR');
 const f2=n=>n.toFixed(2);
 const dot=d=>d.replace(/-/g,'.');
@@ -70,18 +83,6 @@ function dist(ids,a,b){
 const stats=o=>{const n=o.reduce((x,y)=>x+y,0);return{n,avg:n?(o[0]+2*o[1]+3*o[2]+4*o[3]+5*o[4])/n:null,low:n?(o[0]+o[1])/n:null}};
 const sel=()=>[...state.groups];
 
-// chips
-const chips=document.getElementById('chips');
-GROUPS.forEach(g=>{
-  const el=document.createElement('button');
-  el.className='chip';el.id='chip-'+g.id;el.innerHTML=`<i style="background:${g.c}"></i>${g.name}`;el.setAttribute('aria-pressed','true');
-  el.onclick=()=>{
-    if(state.groups.has(g.id)){if(state.groups.size===1)return;state.groups.delete(g.id)}else state.groups.add(g.id);
-    el.setAttribute('aria-pressed',state.groups.has(g.id));render();
-  };
-  chips.appendChild(el);
-});
-document.querySelectorAll<HTMLButtonElement>('[data-g]').forEach(b=>b.onclick=()=>{if(!b.disabled){state.g=b.dataset.g;render()}});
 document.querySelectorAll<HTMLElement>('[data-v]').forEach(b=>b.onclick=()=>{state.view=b.dataset.v;render()});
 document.getElementById('prev').onclick=()=>{state.calM--;if(state.calM<0){state.calM=11;state.calY--}renderCal()};
 document.getElementById('next').onclick=()=>{state.calM++;if(state.calM>11){state.calM=0;state.calY++}renderCal()};
@@ -244,7 +245,8 @@ function renderStats({S,A}){
   const unit={day:'날',week:'주',month:'달'}[state.g];
   const dAvg=S.avg-A.avg,dLow=(S.low-A.low)*100;
   const wl=worst?(state.g==='month'?worst.b.key:md(days[worst.b.from])+(state.g==='week'?' 주':'')):'—';
-  document.getElementById('stats').innerHTML=[
+  const statsEl=document.getElementById('stats');if(!statsEl)return; // VoC 분석에서는 요약 카드 없이 그래프만 씁니다
+  statsEl.innerHTML=[
     ['평균 별점',S.avg?`${f2(S.avg)}<small> / 5</small>`:'—',S.avg?`전체 기간 ${f2(A.avg)} 대비 <span class="${dAvg<0?'down':''}">${dAvg>0?'+':''}${f2(dAvg)}</span>`:''],
     ['1–2점 비중',S.low!==null?(Math.round(S.low*1000)/10)+'%':'—',S.low!==null?`전체 기간 대비 <span class="${dLow>0?'down':''}">${dLow>0?'+':''}${dLow.toFixed(1)}%p</span>`:''],
     ['별점이 가장 낮았던 '+unit,wl,worst?`평균 ${f2(worst.avg)}점 · ${fmt(worst.n)}건`:''],
@@ -256,7 +258,8 @@ function renderStats({S,A}){
   // else note.hidden=true;
 }
 
-function render(){renderHead();renderCal();if(state.to!==null){renderLine();renderStats(periodSA());window.__vocRange={from:state.from,to:state.to,total:N};window.dispatchEvent(new Event('voc-range'))}}
+function render(){renderHead();renderCal();if(state.to!==null){renderLine();renderStats(periodSA())}}
 window.addEventListener('resize',()=>{document.querySelectorAll<HTMLElement>('.tip').forEach(t=>t.style.opacity='0')});
 render();
-export function onShow() {}
+// VoC 분석에서 시장을 고르면 그 시장의 리뷰 추이만 다시 그립니다
+export function setMarket(name: string){const g=GROUPS.find(x=>x.name===name);if(!g)return;state.groups=new Set([g.id]);render()}

@@ -10,13 +10,15 @@ import './styles/a4.css';
 
 import { VIEWS } from './mount';      // 반드시 화면 모듈보다 먼저
 import { register, start } from './router';
-import * as trend from './views/trend';
-import './views/market-overview';
+import './views/trend';
 import * as market from './views/market';
+import * as compete from './views/compete';
 import * as issues from './views/issues';
 import * as report from './views/report';
 
-const onShow = { issues: issues.onShow, trend: trend.onShow, market: market.onShow, report: report.onShow };
+const onShow = { issues: issues.onShow, voc: market.onShow, market: compete.onShow, report: report.onShow };
+// 예전 주소(#trend)는 VoC 분석 화면으로 보냅니다
+if (location.hash.startsWith('#trend')) { try { history.replaceState(null, '', '#voc'); } catch (e) {} }
 for (const [name, view, tab] of VIEWS) register(name, { view, tab, onShow: onShow[name] });
 
 issues.render();

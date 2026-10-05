@@ -1,15 +1,7 @@
-<!-- 글로벌 VoC 동향 · #trend (별점 추이 + 시장 현황) -->
-<div class="wrap" id="view-ov" hidden>
-  <div class="head">
-    <div>
-      <h1>글로벌 VoC 동향</h1>
-      <p>원하는 기간의 글로벌 VoC 세부 내용을 확인해보세요.</p>
-    </div>
-  </div>
+<!-- VoC 분석 > 기간별 리뷰 추이 · market.html 의 OVERVIEW 표시 자리에 들어갑니다 -->
+<div class="wrap" id="view-ov">
 
-  <div class="stats" id="stats" aria-label="선택 기간 요약"></div>
 
-  <div class="chips" id="chips" role="group" aria-label="언어권"></div>
 
   <div class="grid">
     <section class="card" aria-label="기간 선택">
@@ -41,10 +33,6 @@
         </div>
         <div class="r">
           <div class="legend"><span><i class="sw" style="background:var(--bar)"></i>리뷰 수</span><span id="lg-line"><i class="ln2"></i>평균 별점</span></div>
-          <div class="seg quiet" role="group" aria-label="보기">
-            <button id="v-all" data-v="all" aria-pressed="true">전체</button>
-            <button id="v-group" data-v="group" aria-pressed="false">언어권별</button>
-          </div>
         </div>
       </div>
       <div class="chart-box" id="line-box">
@@ -56,38 +44,5 @@
   </div>
 
 
-  <div class="note" id="note" hidden></div>
 
-  <section class="card verdict" aria-label="문제 유형 요약">
-    <div class="chart-top">
-      <h2>문제 유형 요약 <span class="sub">이슈의 범위를 요약해 표현</span></h2>
-    </div>
-    <div class="vbar" id="vbar" role="group" aria-label="문제 유형별 시장 수"></div>
-    <div class="vkeys" id="vkeys"></div>
-    <div class="vread" id="vread"></div>
-  </section>
-
-  <section class="card" aria-label="시장별 표">
-    <div class="chart-top">
-      <h2 id="tbl-title">시장별 집중 이슈 <span class="sub">국가별 가장 많이 발생한 이슈</span></h2>
-      <span class="lift-key"><i></i>국가별 이슈 집중도 1.0 = 전체 국가 평균 수준</span>
-    </div>
-    <div class="tbl-wrap">
-      <table class="mk" id="mk">
-        <thead><tr><th>#</th><th>시장</th><th>집중 이슈</th><th>국가별 이슈 집중도</th><th>문제 유형</th><th class="r">분석 리뷰 수</th></tr></thead>
-        <tbody id="mk-body"></tbody>
-      </table>
-    </div>
-  </section>
-
-  <div class="foot2">
-    <span>수집 기간 <span class="num">2023-09-24 – 2026-09-22</span></span>
-    <span>전체 수집 <span class="num">73,040</span>건</span>
-    <span>분석 리뷰 <span class="num">34,008</span>건</span>
-    <span>VOC 이슈 유형 <span class="num">10</span>종</span>
-    <span>시장 간 차이 통계적으로 유의 <span class="num">(카이제곱 검정 p&lt;0.001)</span></span>
-    <span>Google Play <span class="num">com.lgeha.nuts</span></span>
-    <span class="sep"></span>
-    <span>별점은 나라마다 별점 주는 습관이 달라 시장끼리 심각도를 비교하는 데 쓰지 않습니다. 같은 시장 안의 변화와 국가별 이슈 집중도를 기준으로 보세요.</span>
-  </div>
 </div>

@@ -1,7 +1,7 @@
 // VoC 이슈 관리(#issues): KPI, 이슈 표, 상세 Drawer(세부 내용·처리·분석·메일)
 import { TODAY, ME, DEPTS, ST, EV, I, need, deptName, md, prio, fixDate, LOCALE, scr } from '../data/issues';
 import type { IssueEvent } from '../data/issues';
-import { $, esc, toast } from '../shared/ui';
+import { $, esc, toast, AGENT_ICON } from '../shared/ui';
 import { go, setParam } from '../router';
 import { refresh as refreshReport, goReport, buildReport } from './report';
 
@@ -18,13 +18,7 @@ function visible(){
   }).sort((a,b)=>prio(b).score-prio(a).score);
 }
 
-function spark(s,status){
-  const W=72,H=26,n=s.length,mx=Math.max(...s.map(p=>p.v),1);
-  const pts=s.map((p,i)=>`${(i/(n-1)*W).toFixed(1)},${(H-2-p.v/mx*(H-4)).toFixed(1)}`).join(' ');
-  const c=status==='reopen'?'var(--crit)':status==='new'?'var(--warn)':status==='done'?'var(--good)':'var(--ink)';
-  return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" aria-hidden="true"><polyline points="${pts}" fill="none" stroke="${c}" stroke-width="1.5" stroke-linejoin="round"/></svg>`;
-}
-const BULB='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6"/><path d="M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3Z"/></svg>';
+const BULB=AGENT_ICON;
 const stPill=s=>`<span class="st ${s}"><i></i>${ST[s].t}</span>`;
 
 function renderTop(){
@@ -51,7 +45,7 @@ function renderList(){
   const qn={reopen:'재발 이슈',new:'신규 이슈',orphan:'담당 미배정'}[state.q];
   $('list-sort').textContent=`${qn?qn+' · ':''}${v.length}건${state.dept!=='all'?' · '+deptName(state.dept):''}${txt?' · "'+state.text+'" 검색':''} · ${state.f==='archive'?'처리 완료일 최신 순':'우선순위 높은 순'}`;
   $('list-title').textContent=state.f==='archive'?'아카이브':'이슈 목록';
-  if(!v.length){box.innerHTML='<tr><td colspan="8" class="empty" style="cursor:default">조건에 맞는 이슈가 없습니다.</td></tr>'}
+  if(!v.length){box.innerHTML='<tr><td colspan="7" class="empty" style="cursor:default">조건에 맞는 이슈가 없습니다.</td></tr>'}
   else box.innerHTML=v.map((it,k)=>{
     const last=[...it.series].reverse().find(p=>p.v>0);
     return `<tr data-id="${it.id}" tabindex="0" aria-selected="${drawerOpen()&&it.id===state.sel}">
@@ -60,7 +54,6 @@ function renderList(){
       <td>${deptName(it.dept)}${it.dept==='l10n'?' <span class="tag owner-none">담당 없음</span>':''}</td>
       <td>${it.status==='done'?'<span class="st done"><i></i>해결</span>':stPill(it.status)}</td>
       <td>${it.langs.length>2?it.langs.slice(0,2).join(', ')+' 외 '+(it.langs.length-2):it.langs.join(', ')}</td>
-      <td><span class="spark" style="display:flex;align-items:center;gap:6px">${spark(it.series.slice(-30),it.status)}<span class="tid">${it.trend===null?'':(it.trend>0?'+':'')+it.trend+'%'}</span></span></td>
       <td>${it.owner?`<span class="${it.owner===ME?'own-me':'own'}">${esc(it.owner)}</span>`:'<span class="nobody">미지정</span>'}</td>
       <td>${last?md(last.d):'—'}</td>
     </tr>`}).join('');

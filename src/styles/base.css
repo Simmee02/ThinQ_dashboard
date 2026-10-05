@@ -79,20 +79,40 @@ body{font-variant-numeric:tabular-nums;letter-spacing:-.005em}
   .content{padding:0 16px 32px}
 }
 
-/* 선택된 탭: 배경 없이 왼쪽 막대 + 강조색 글자·아이콘 */
+/* 선택된 탭: 회색 배경 + 강조색 글자·아이콘 */
 .side nav button{position:relative}
-.side nav button[aria-selected="true"]{background:transparent;color:var(--crit);font-weight:600}
-.side nav button[aria-selected="true"]::before{content:"";position:absolute;left:-28px;top:50%;width:5px;height:32px;transform:translateY(-50%);background:var(--crit);border-radius:0 4px 4px 0}
-@media (max-width:900px){
-  .side nav button[aria-selected="true"]::before{left:50%;top:auto;bottom:-10px;width:24px;height:3px;transform:translateX(-50%);border-radius:3px 3px 0 0}
-}
+.side nav button[aria-selected="true"]{background:var(--info-bg);color:var(--crit);font-weight:600}
 
-/* 사이드바와 상단바: 아주 약한 그림자 + 사이 간격 */
-.side{border-right:0;box-shadow:0 1px 8px rgba(20,18,30,.06)}
-.topbar{box-shadow:0 1px 8px rgba(20,18,30,.06)}
+/* 사이드바와 상단바: 간격 없이 한 판으로 붙이고, 경계는 얇은 선 하나 */
+.side{border-right:1px solid var(--line);box-shadow:none}
+.topbar{box-shadow:none;border-bottom:1px solid var(--line)}
+.content .wrap{padding-top:20px}
+
+/* 상단바·사이드바를 얇게: 상단바 높이 60px, 사이드바 폭 224px, 로고 줄을 상단바 높이에 맞춤 */
 @media (min-width:901px){
-  .app{column-gap:2px}
+  .app{grid-template-columns:224px minmax(0,1fr)}
+  .side{padding:0 12px 16px 16px}
+  .side .brand{min-height:60px;padding:0 0 0 4px;margin-bottom:12px;font-size:15px}
+  .topbar{min-height:60px}
 }
-@media (max-width:900px){
-  .side{box-shadow:0 1px 6px rgba(20,18,30,.05)}
-}
+/* 좁은 화면: 위 10/02 블록의 262px 열이 덮어써서 사이드바가 본문을 밀던 문제 바로잡기 */
+@media (max-width:900px){.app{grid-template-columns:minmax(0,1fr)}}
+/* 브랜드 로고 이미지 (src/assets/brand.svg) */
+.side .brand img{display:block;height:20px;width:auto;max-width:100%}
+@media (max-width:900px){.side .brand img{height:18px}}
+
+/* 사이드바 메뉴 (10/05 참고 시안): 선택 = 강조색으로 꽉 찬 둥근 버튼 + 흰 글자, 나머지 = 회색 글자 */
+.side .brand{border-bottom:1px solid var(--line);margin-bottom:20px}
+.side nav{gap:6px}
+.side nav button{color:var(--ink-2);font-weight:500;border-radius:12px;padding:12px 14px}
+.side nav button svg{color:var(--ink-3)}
+.side nav button:hover:not(:disabled):not([aria-selected="true"]){background:var(--surface-2);color:var(--ink)}
+.side nav button[aria-selected="true"]{background:var(--crit);color:#fff;font-weight:600}
+.side nav button[aria-selected="true"] svg{color:#fff}
+@media (min-width:901px){.side .brand{margin-right:-12px;margin-left:-16px;padding-left:20px}}
+/* 에이전트의 팁 아이콘 */
+.tip-ic{width:22px;height:auto;flex:none;display:block;margin-top:-1px}
+/* 선택된 메뉴는 마우스를 올리거나 누를 때도 그대로 (흐려지지 않게) */
+.side nav button[aria-selected="true"]:hover,.side nav button[aria-selected="true"]:active,.side nav button[aria-selected="true"]:focus{background:var(--crit);color:#fff}
+.side nav button{transition:none;-webkit-tap-highlight-color:transparent}
+.side nav button:active:not([aria-selected="true"]){background:var(--surface-2)}

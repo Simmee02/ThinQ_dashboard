@@ -1,0 +1,27 @@
+<!-- 시장 분석 · #market.3 = 4번째 시장 (위 드롭다운으로 언어권 선택 · 경쟁 앱 점유율 · 장단점 · ThinQ의 기회) -->
+<div class="wrap" id="view-cp" hidden>
+  <div class="ph"><h1>시장 분석</h1><p>나라마다 어떤 스마트홈 앱이 쓰이는지 보고, 경쟁 앱의 강점·약점에서 ThinQ의 기회를 찾습니다.</p></div>
+
+  <div class="vg" id="cp-detail">
+      <div class="vg-head s3">
+        <h1 id="cp-name" class="vh"></h1><label class="msel"><select id="cp-select" aria-label="언어권 선택"></select></label><span id="cp-rank"></span>
+        <button type="button" class="back" id="cp-to-voc">이 시장 VoC 분석 보기</button>
+      </div>
+
+      <section class="card s2" aria-labelledby="cps-title">
+        <div class="chart-top"><h2 id="cps-title">점유율 <span class="sub">LG·ThinQ만 빨간색, 나머지는 회색</span></h2></div>
+        <div class="cp-donuts" id="cp-donuts"></div>
+        <div id="cp-share-tip"></div>
+      </section>
+
+
+      <section class="card" aria-labelledby="cpc-title">
+        <div class="chart-top"><h2 id="cpc-title">ThinQ의 기회</h2></div>
+        <div class="cp-chance" id="cp-chance"></div>
+      </section>
+      <section class="card s3" aria-labelledby="cpa-title">
+        <div class="chart-top"><h2 id="cpa-title">경쟁 앱 장단점 <span class="sub">경쟁 앱 리뷰를 VoC와 같은 방식으로 분석한 결과</span></h2></div>
+        <div class="cp-apps" id="cp-apps"></div>
+      </section>
+  </div>
+</div>
