@@ -1,17 +1,18 @@
-<!-- 국가별 시장 분석 · #market -->
+<!-- 국가별 시장 분석 · #market (v3: 사용 단계 → 장벽 후보 → 근거 → 다른 가능성 → 확인할 지표·개선 방향) -->
 <div class="wrap" id="view-mk" hidden>
-  <div class="ph"><h1>국가별 시장 분석</h1><p>시장별 VoC 이슈의 국가별 이슈 집중도를 비교해보세요.</p></div>
+  <div class="ph"><h1>국가별 시장 분석</h1><p>시장별로 앱 사용을 막는 장벽 후보를 찾고, 사내 데이터로 확인할 지표를 제안합니다.</p></div>
   <div class="dt">
     <nav class="mlist" aria-label="시장 목록"><h2>시장 17</h2><div id="mlist" style="display:contents"></div></nav>
 
     <main class="dt-main">
       <div class="dt-head">
-        <div class="t"><h1 id="dt-name"></h1><span id="dt-pill"></span><span id="dt-small"></span></div>
+        <div class="t"><h1 id="dt-name"></h1><span id="dt-pill"></span><span id="dt-attr"></span><span id="dt-small"></span></div>
       </div>
 
       <section class="card">
         <h2>기본 정보</h2>
         <div class="kv" id="dt-kv"></div>
+        <p class="kv-note" id="dt-attr-note"></p>
       </section>
 
       <section class="card split">
@@ -19,42 +20,44 @@
           <div class="chart-top"><h2>국가별 이슈 집중도 <span class="sub nl">전체 국가 평균 대비 이 국가에서 해당 이슈가 차지하는 비중 (국가별 이슈 집중도 1.0 = 전체 국가 평균 수준)</span></h2></div>
           <div class="tl" id="dt-topics"></div>
         </div>
-        <div class="aside">
-          <div class="seg sm" role="group" aria-label="비교 단위" id="dt-seg">
-            <button data-p="d" aria-pressed="false">1일</button><button data-p="w" aria-pressed="true">1주</button><button data-p="m" aria-pressed="false">1달</button>
-          </div>
-          <span class="sub" style="margin-top:6px">평균 별점</span>
-          <div class="big" id="dt-big"></div>
-          <div class="chg" id="dt-chg"></div>
+        <div class="aside stage-aside">
+          <span class="sub">장벽 후보가 걸린 사용 단계</span>
+          <ol class="stages" id="dt-stages"></ol>
         </div>
       </section>
 
       <section class="card summary">
-        <h2>자동 요약</h2>
+        <h2>장벽 후보 요약</h2>
         <p id="dt-sum"></p>
       </section>
 
       <section class="card">
-        <div class="chart-top"><h2>현지화 유형 6종 <span class="sub">현지화 실패로 생긴 불만을 여섯 종류로 나눈 것</span></h2></div>
-        <div class="types">
-          <div class="type"><b>언어·번역</b><span>예: 앱 문구가 어색하거나 번역이 안 됨</span></div>
-          <div class="type"><b>날짜·시간 규격</b><span>예: 요일 형식, 서머타임 처리</span></div>
-          <div class="type"><b>단위·수치 규격</b><span>예: 온도·용량 단위가 현지 기준과 다름</span></div>
-          <div class="type"><b>계정·국가 제한</b><span>예: 계정 국가가 고정돼 바꿀 수 없음</span></div>
-          <div class="type"><b>현지 규격·제도</b><span>예: 현지 인증·표준(예: Matter)과 안 맞음</span></div>
-          <div class="type"><b>개인정보·권한 규범</b><span>예: 위치 권한 요구가 현지 정서에 비해 과함</span></div>
-        </div>
+        <div class="chart-top"><h2>장벽 후보와 다른 가능성 <span class="sub">후보를 누르면 아래 에이전트 제안이 그 후보 기준으로 바뀝니다</span></h2></div>
+        <div class="cands" id="dt-cands"></div>
       </section>
+
+      <section class="card agent" aria-labelledby="ag-title">
+        <div class="ag-top">
+          <div><h2 id="ag-title">에이전트 제안 <span class="sub">개선 목표를 고르면 먼저 확인할 사내 지표와 개선 방향을 제안합니다</span></h2></div>
+          <span class="ag-badge">AI 제안 · 예시</span>
+        </div>
+        <div class="seg sm" role="group" aria-label="개선 목표" id="ag-goal">
+          <button data-g="retain" aria-pressed="true">리텐션 올리기</button><button data-g="onboard" aria-pressed="false">연동 성공률 올리기</button><button data-g="update" aria-pressed="false">업데이트 후 이탈 줄이기</button>
+        </div>
+        <div id="ag-body"></div>
+      </section>
+
+      <p class="limits">공개 리뷰를 바탕으로 한 가설입니다. 실제 리텐션·연동 성공률을 측정한 값이 아니며, 국가별 이슈 집중도는 다른 시장보다 많이 언급되는 정도로 심각도가 아닙니다. 서비스 장애 구간(2026-07-01 – 08-01)은 계산에서 제외했습니다.</p>
     </main>
 
     <aside class="dt-side">
       <section class="card">
-        <h2>집중 이슈가 같은 시장</h2>
+        <h2>같은 장벽 후보가 있는 시장</h2>
         <div id="dt-peer-sub" style="margin-top:8px"></div>
         <div id="dt-peers" style="margin-top:6px"></div>
       </section>
       <section class="card">
-        <div class="chart-top"><h2>대표 리뷰</h2></div>
+        <div class="chart-top"><h2>근거 리뷰 <span class="sub nl">1–2점 · 장애 구간 제외</span></h2></div>
         <div id="dt-reviews" style="margin-top:4px"></div>
       </section>
     </aside>

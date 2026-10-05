@@ -37,12 +37,12 @@ function draw(){
     k.innerHTML=`<i style="background:${fill(v)};${v.id==='none'?'box-shadow:inset 0 0 0 1px var(--line-2)':''}"></i>${v.name} <b>${n}</b>`;
     k.onclick=b.onclick;keys.appendChild(k);
   });
-  const common=count('wide')+count('multi');
+  const common=count('wide')+count('group')+count('part');
   const judged=M.length-count('none');
   const tip=t=>`<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6"/><path d="M10 21h4"/><path d="M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3Z"/></svg><span><b class="tip-k">에이전트의 팁 :</b> ${t}</span>`;
   document.getElementById('vread').innerHTML=tip(filter
     ?`<b>${V.find(v=>v.id===filter).name}</b> ${count(filter)}개 시장만 표시 중 · 같은 항목을 다시 누르면 전체 보기`
-    :`문제 유형가 정해진 ${judged}개 시장 중 <b>${common}개</b>는 여러 시장에 공통으로 나타나는 불만이고, 한 시장에서만 나타나는 현지화 이슈는 <b>${count('local')}개</b>입니다.`);
+    :`장벽 후보가 있는 ${judged}개 시장 중 <b>${common}개</b>는 1순위 장벽이 여러 시장에 공통으로 나타나고, 그 시장에서만 두드러지는 시장 특이 불만 후보는 <b>${count('special')}개</b>입니다. 비교할 이웃이 없는 단독 시장은 ${count('solo')}개입니다.`);
 
   const body=document.getElementById('mk-body');body.innerHTML='';
   rows().forEach(({m,i},rk)=>{
