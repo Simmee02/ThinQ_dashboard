@@ -3,16 +3,14 @@
 <div class="wrap vv" id="view-mk" hidden>
   <div class="ph2"><div class="ttl"><h1>VoC 분석</h1><p>시장의 현지화 니즈 분석 결과를 확인해보세요.</p></div></div>
 
-  <!-- 탭과 시장 선택을 한 줄에 둡니다 (첫 화면에 시장 진단 카드까지 들어오도록) -->
-  <div class="vhead">
-    <div class="vtabs" role="tablist" aria-label="VoC 분석 보기">
-      <button role="tab" id="vt-ai" aria-controls="vp-ai" aria-selected="true">AI 인사이트</button>
-      <button role="tab" id="vt-data" aria-controls="vp-data" aria-selected="false">데이터 분석</button>
-    </div>
-    <div class="vbar">
-      <label class="msel2"><select id="mk-select" aria-label="시장 선택"></select></label>
-      <span class="period" id="vk-period"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4"/><path d="M16 3v4"/></svg>2023.09.30 – 2026.09.30</span>
-    </div>
+  <div class="vtabs" role="tablist" aria-label="VoC 분석 보기">
+    <button role="tab" id="vt-ai" aria-controls="vp-ai" aria-selected="true">AI 인사이트</button>
+    <button role="tab" id="vt-data" aria-controls="vp-data" aria-selected="false">데이터 분석</button>
+  </div>
+
+  <div class="vbar">
+    <label class="msel2"><select id="mk-select" aria-label="시장 선택"></select></label>
+    <span class="period" id="vk-period"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4"/><path d="M16 3v4"/></svg>2023.09.30 – 2026.09.30</span>
   </div>
 
   <!-- AI 인사이트 -->

@@ -202,7 +202,7 @@ function renderDetail(){
         <div class="ttl"><div class="id">${it.id} · ${it.topic}</div><h2>${it.title}</h2></div>
         <div class="actions">
           <button class="btn" id="b-report">리포트</button>
-          ${it.status==='done'?'<button class="btn" id="b-reopen">다시 열기</button>':'<button class="btn primary" id="b-fix">처리 완료</button>'}
+          ${it.status==='done'?'<button class="btn" id="b-reopen">다시 열기</button>':it.status==='new'||it.status==='reopen'?'<button class="btn primary" id="b-start">처리 진행</button>':'<button class="btn primary" id="b-fix">처리 완료</button>'}
         </div>
       </div>
       <div class="tags">${it.status!=='done'?stPill(it.status):'<span class="st done"><i></i>해결</span>'}${vChip(it)}<span class="tag">${esc(it.area)}</span>${it.dept==='l10n'?'<span class="tag owner-none">담당 없음</span>':''}</div>
@@ -261,6 +261,13 @@ function renderDetail(){
     if(!it.owner){it.pick='own';it.err='처리 완료하려면 먼저 대응 담당자를 지정해 주세요.'}
     else it.err='무엇을 했는지 메모를 남기고 저장해 주세요. 재발 판단의 기준이 됩니다.';
     renderDetail();const f=$(it.owner?'o-memo':'pk-q');f.scrollIntoView({block:'center'});f.focus();
+  };
+  // 신규·재발 이슈는 먼저 '처리 진행'으로 진행 중 열에 옮기고, 진행 중부터 '처리 완료'를 누를 수 있습니다
+  if($('b-start'))$('b-start').onclick=()=>{
+    it.prev=it.status;it.status='open';
+    it.events.push([TODAY,'mail','담당자 확인 · 진행 중으로 변경','']);
+    it.editedAt=fmtDate(new Date());it.editedBy=ME;(it.log=it.log||[]).push([ME,'처리 진행 · 진행 중으로 변경',nowStr()]);
+    toast(`${it.id} 처리를 시작했습니다 · 진행 중으로 옮겼습니다`);render();
   };
   if($('b-reopen'))$('b-reopen').onclick=()=>{it.status=it.prev&&it.prev!=='done'?it.prev:'open';toast(`${it.id} 다시 열었습니다`);render()};
 }
