@@ -76,7 +76,7 @@ function drawAI(name: string, d: typeof D[string], cands: Cand[]){
   $('ai-sum').innerHTML=asum(lines);
 
   $('ai-kpis').innerHTML=[
-    ['분석 리뷰',`${nf(n)}건`,M[cur][1]?'리뷰 적음':'총 리뷰'],
+    ['분석 리뷰',`${nf(n)}건`,M[cur][1]?'리뷰 적음':''],
     ['발견된 현지화 니즈',`${cands.length}개`,cands.length?'':'판정 보류'],
     ['1순위 이슈 집중도',c0?f2(c0.lift):'—',c0?esc(c0.t):''],
   ].map(([k,v,s])=>`<div class="vkpi"><span class="k">${k}</span><div class="b"><b>${v}</b>${s?`<span>${s}</span>`:''}</div></div>`).join('');

@@ -422,7 +422,7 @@
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--kpi-bg:#221a1c;--kpi-line:#3a2529;--chip-n:#2d2b33}}
 :root[data-theme="dark"]{--kpi-bg:#221a1c;--kpi-line:#3a2529;--chip-n:#2d2b33}
 
-#view-is.wrap{gap:20px}
+#view-is.wrap{gap:18px}
 #view-is .dept-f svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;flex:none}
 
 #view-is .kpis2{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px}

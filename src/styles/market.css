@@ -398,9 +398,9 @@ td.low-cell{color:var(--crit-ink);font-weight:600}
 .vg .limits{margin-top:-4px}
 
 /* ===== 10/07 Figma 'VoC 분석 v2' (AI 인사이트 / 데이터 분석 탭) ===== */
-#view-mk.wrap{gap:16px}
+#view-mk.wrap{gap:18px}
 #view-mk .ph2 p{font-size:14px}
-#view-mk .vtabs{display:flex;gap:8px;border-bottom:1px solid var(--line);margin-top:-2px}
+#view-mk .vtabs{display:flex;gap:8px;border-bottom:1px solid var(--line);margin-top:0}
 #view-mk .vtabs button{position:relative;border:0;background:transparent;font:inherit;font-size:15px;font-weight:500;color:var(--ink-3);padding:4px 13px 6px;min-width:100px;cursor:pointer}
 #view-mk .vtabs button[aria-selected="true"]{color:var(--ink);font-weight:700}
 #view-mk .vtabs button[aria-selected="true"]::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--crit)}
@@ -572,7 +572,7 @@ td.low-cell{color:var(--crit-ink);font-weight:600}
 #view-mk .limits{margin:4px 0 0;font-size:12px;color:var(--ink-3)}
 
 /* ===== 10/07 Figma '03 시장 분석 v2' ===== */
-#view-cp.wrap{gap:16px}
+#view-cp.wrap{gap:18px}
 #view-cp .vbar{margin-top:2px}
 #view-cp .vsec{gap:18px}
 #view-cp .u3{margin-top:0}
@@ -624,13 +624,9 @@ td.low-cell{color:var(--crit-ink);font-weight:600}
 #view-cp .cpa-h div b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 @media (max-width:1100px){#view-cp .u3{grid-template-columns:minmax(0,1fr)}}
 
-/* ===== 10/07 VoC 분석 압축: 시장 진단(요약·KPI·카드 3개)이 한 화면에 들어오도록 ===== */
-#view-mk.wrap{gap:12px}
+/* ===== 10/07 VoC 분석 압축: 시장 진단(요약·KPI·카드 3개)을 짧게 (제목·탭·시장 선택 줄은 피그마 배치 그대로) ===== */
+#view-mk.wrap{gap:18px}
 #view-mk .ph2 h1{font-size:28px}
-#view-mk .vhead{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;border-bottom:1px solid var(--line)}
-#view-mk .vhead .vtabs{border-bottom:0;margin-top:0}
-#view-mk .vhead .vbar{padding-bottom:8px}
-#view-mk .msel2 select,#view-mk .vhead .period{height:34px}
 #view-mk .vsec{padding:20px 24px}
 #view-mk .vsec-h h2{font-size:18px;line-height:26px}
 #view-mk .vsec{gap:12px}
@@ -643,4 +639,3 @@ td.low-cell{color:var(--crit-ink);font-weight:600}
 #view-mk .v3{margin-top:0}
 #view-mk .v3 .vcard{height:320px;padding:16px 18px;gap:10px}
 #view-mk .radar svg{max-height:236px}
-@media (max-width:700px){#view-mk .vhead{flex-direction:column;align-items:stretch}#view-mk .vhead .vbar{padding:8px 0}}

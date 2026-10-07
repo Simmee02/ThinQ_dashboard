@@ -123,7 +123,7 @@ body{font-variant-numeric:tabular-nums;letter-spacing:-.005em}
 :root[data-theme="dark"]{--v-multi-bg:#33290f;--v-multi:#f0b54a;--v-local-bg:#35230f;--v-local:#f39a5a;--v-none-bg:#2a2930}
 .ph2{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-top:6px}
 .ph2 .ttl{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
-.ph2 h1{margin:0;font-size:32px;font-weight:700;line-height:1.1;letter-spacing:-.02em}
+.ph2 h1{margin:0;font-size:28px;font-weight:700;line-height:1.1;letter-spacing:-.02em}
 .ph2 p{margin:0;font-size:13px;color:var(--ink-2)}
 .period{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 13px 0 12px;border:1px solid var(--line-2);border-radius:8px;background:var(--surface);font-size:13px;font-weight:500;white-space:nowrap;color:var(--ink)}
 .period svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;flex:none}
@@ -145,3 +145,7 @@ body{font-variant-numeric:tabular-nums;letter-spacing:-.005em}
 .vd.v-multi{background:var(--v-multi-bg);color:var(--v-multi)}
 .vd.v-local{background:var(--v-local-bg);color:var(--v-local)}
 .vd.v-none{background:var(--v-none-bg);color:var(--ink-3)}
+/* 각 탭 페이지 제목은 28px로 통일 (이슈보드·VoC 분석·시장 분석·보고서 생성) */
+.ph2 h1{font-size:28px}
+/* 페이지 머리(제목 · 탭 · 시장 선택)와 그 아래 블록 사이 간격은 네 화면 모두 18px (issues.css · market.css 의 .wrap gap 도 18px) */
+#view-rp.wrap{gap:18px}
