@@ -1,40 +1,39 @@
-<!-- VoC 이슈 관리 · #issues (상세 Drawer 포함) -->
+<!-- 이슈보드 · #issues (칸반 보드 / 목록, 상세 Drawer 포함) -->
 <div class="wrap" id="view-is" hidden>
-  <div class="case">
-    <span><b>2026년 7월 13일 시스템 장애가 보고되었습니다.</b></span>
-    <button id="open-case">상세보기</button>
+  <div class="ph2">
+    <div class="ttl"><h1>이슈보드</h1><p>조치가 필요한 이슈를 확인해보세요.</p></div>
+    <span class="period"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4"/><path d="M16 3v4"/></svg>2026.09.01 – 09.30</span>
   </div>
 
-  <div class="ph">
-    <h1>이슈보드</h1>
-    <p>ThinQ 앱의 언어권별 VoC를 분석해 주요 이슈를 파악하고, 담당 부서의 조치 현황을 관리해 보세요.</p>
+  <div class="kpis2">
+    <button class="kpi2 stat" data-q="need"><span class="k">조치 필요</span><span class="d">담당 조직의 확인이 필요한 이슈</span><span class="v" id="v-need"></span></button>
+    <button class="kpi2 stat" data-q="new"><span class="k">신규 이슈</span><span class="d">최근 24시간 안에 새로 생긴 이슈</span><span class="v" id="v-new"></span></button>
+    <button class="kpi2 stat" data-q="reopen"><span class="k">재발 이슈</span><span class="d">이슈 해결 처리 후 다시 발생한 이슈</span><span class="v" id="v-reopen"></span></button>
+    <button class="kpi2 stat" data-q="orphan"><span class="k">담당자 미배정</span><span class="d">담당 부서, 담당자 배정이 필요한 이슈</span><span class="v" id="v-orphan"></span></button>
   </div>
 
-  <div class="kpis">
-    <button class="kpi stat" id="s-need" data-q="need"><span class="top"><span class="v" id="v-need"></span><span class="ic ic-gray"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11"/><path d="M9 12h11"/><path d="M9 18h11"/><path d="M4 6h.01"/><path d="M4 12h.01"/><path d="M4 18h.01"/></svg></span></span><span class="k">조치 필요</span><span class="d">담당 조직의 확인이 필요한 이슈</span></button>
-    <button class="kpi stat" id="s-new" data-q="new"><span class="top"><span class="v" id="v-new"></span><span class="ic ic-crit"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v4"/><path d="M12 18v4"/><path d="M4.9 4.9l2.8 2.8"/><path d="M16.3 16.3l2.8 2.8"/><path d="M2 12h4"/><path d="M18 12h4"/><circle cx="12" cy="12" r="3"/></svg></span></span><span class="k">신규 이슈</span><span class="d">24시간 내 신규 발생한 이슈</span></button>
-    <button class="kpi stat" id="s-reopen" data-q="reopen"><span class="top"><span class="v" id="v-reopen"></span><span class="ic ic-re"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/></svg></span></span><span class="k">재발 이슈</span><span class="d">조치 완료 후 동일 이슈 발생건</span></button>
-    <button class="kpi stat" id="s-orphan" data-q="orphan"><span class="top"><span class="v" id="v-orphan"></span><span class="ic ic-gray"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/><path d="M17 3l4 4"/><path d="M21 3l-4 4"/></svg></span></span><span class="k">담당자 미배정</span><span class="d">담당 부서가 지정되지 않은 현지화 이슈</span></button>
-  </div>
-
-  <section class="card tbl" aria-label="이슈 목록">
-    <div class="tbl-head">
-      <div><h2 id="list-title">이슈 목록</h2> <span class="sub" id="list-sort">우선순위 높은 순</span></div>
-      <div class="ctrls">
-        <label class="search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="q-search" type="search" placeholder="이슈 검색" aria-label="이슈 검색"></label>
-        <select id="dept-sel" aria-label="담당 부서"></select>
-        <button class="btn" id="f-arch" aria-pressed="false">아카이브 <span id="arch-n"></span></button>
+  <section class="board" aria-label="이슈 관리 보드">
+    <div class="bd-head">
+      <div><h2>이슈 관리 보드</h2><p id="bd-sub">이슈 처리 현황을 확인하고, 관리해보세요.</p></div>
+      <div class="bd-ctrls">
+        <div class="vt" role="group" aria-label="보기 방식">
+          <button data-v="board" aria-pressed="true">보드</button>
+          <button data-v="list" aria-pressed="false">목록</button>
+          <button data-v="timeline" aria-pressed="false">타임라인</button>
+        </div>
+        <label class="dept-f"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18l-7 8.5V19l-4 2v-7.5Z"/></svg><select id="dept-sel" aria-label="담당 부서"></select></label>
       </div>
     </div>
-    <div class="tw"><table class="it">
-      <thead><tr><th>#</th><th>이슈</th><th>담당 부서</th><th>현황</th><th>영향 언어권</th><th>담당자</th><th>생성 일자</th></tr></thead>
+
+    <div class="kb" id="kb"></div>
+
+    <div class="tw" id="list-wrap" hidden><table class="it">
+      <thead><tr><th>#</th><th>이슈</th><th>판정</th><th>담당 부서</th><th>현황</th><th>영향 언어권</th><th>담당자</th><th>생성 일자</th></tr></thead>
       <tbody id="issue-rows"></tbody>
     </table></div>
-  </section>
 
-  <div class="foot">
-    처리 완료된 이슈는 아카이브에서 확인할 수 있습니다.<br>
-  </div>
+    <div class="tlv" id="tl-wrap" hidden></div>
+  </section>
 
   <div class="scrim" id="scrim" hidden></div>
   <aside class="drawer" id="drawer" hidden aria-label="이슈 상세">

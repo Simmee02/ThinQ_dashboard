@@ -4,11 +4,11 @@ export interface Verdict { id: string; name: string; desc: string; c: string; dc
 export type MarketRow = [name: string, small: number, n: number, topic: string | null, lift: number | null, verdict: string, rate: number];
 
 // 판정 규칙: 국가별 이슈 집중도 1.3 이상 + 잔차 2 이상인 이슈만 현지화 니즈로 보고, 같은 이슈가 다른 시장에도 있는지로 범위를 나눕니다
-// (세부 규칙: 광역 공통 → 앱 공통 오류 / 그룹·부분 공통 → 다국가 현지화 이슈 / 현지화 갭·단독 시장 → 현지화 이슈)
+// (세부 규칙: 광역 공통 → 공통 발생 이슈 / 그룹·부분 공통 → 다국가 현지화 이슈 / 현지화 갭·단독 시장 → 단일 국가 현지화 이슈)
 export const V: Verdict[]=[
-  {id:'wide',name:'앱 공통 오류',desc:'여러 그룹의 과반 시장에 나타남 · 본사 단위 검토',c:'#e5384f',dc:'#ff6b7a',ink:'#fff',dink:'#1c1b20'},
+  {id:'wide',name:'공통 발생 이슈',desc:'여러 그룹의 과반 시장에 나타남 · 본사 단위 검토',c:'#e5384f',dc:'#ff6b7a',ink:'#fff',dink:'#1c1b20'},
   {id:'multi',name:'다국가 현지화 이슈',desc:'같은 그룹의 여러 시장에 나타남 · 제품군·시장 묶음 단위 검토',c:'#7c3aed',dc:'#a78bfa',ink:'#fff',dink:'#1c1b20'},
-  {id:'local',name:'현지화 이슈',desc:'이 시장에서만 두드러짐 · 원인 검수 후 확정',c:'#0e9aa7',dc:'#2dd4bf',ink:'#fff',dink:'#1c1b20'},
+  {id:'local',name:'단일 국가 현지화 이슈',desc:'이 시장에서만 두드러짐 · 원인 검수 후 확정',c:'#0e9aa7',dc:'#2dd4bf',ink:'#fff',dink:'#1c1b20'},
   {id:'none',name:'판정 보류',desc:'판정 기준을 넘는 이슈가 없음',c:'none',dc:'none',ink:'#5f5c66',dink:'#aeaab6'}
 ];
 export const M: MarketRow[]=[

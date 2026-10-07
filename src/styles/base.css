@@ -116,3 +116,32 @@ body{font-variant-numeric:tabular-nums;letter-spacing:-.005em}
 .side nav button[aria-selected="true"]:hover,.side nav button[aria-selected="true"]:active,.side nav button[aria-selected="true"]:focus{background:var(--crit);color:#fff}
 .side nav button{transition:none;-webkit-tap-highlight-color:transparent}
 .side nav button:active:not([aria-selected="true"]){background:var(--surface-2)}
+
+/* ===== 10/07 Figma v2 공통: 페이지 제목 줄, 기간 표시, 흰 섹션, 에이전트 요약, 판정 칩 ===== */
+:root{--v-multi-bg:#ffffe8;--v-multi:#d57901;--v-local-bg:#fdf0e6;--v-local:#a14a0b;--v-none-bg:#f4f4f4}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--v-multi-bg:#33290f;--v-multi:#f0b54a;--v-local-bg:#35230f;--v-local:#f39a5a;--v-none-bg:#2a2930}}
+:root[data-theme="dark"]{--v-multi-bg:#33290f;--v-multi:#f0b54a;--v-local-bg:#35230f;--v-local:#f39a5a;--v-none-bg:#2a2930}
+.ph2{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-top:6px}
+.ph2 .ttl{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.ph2 h1{margin:0;font-size:32px;font-weight:700;line-height:1.1;letter-spacing:-.02em}
+.ph2 p{margin:0;font-size:13px;color:var(--ink-2)}
+.period{display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 13px 0 12px;border:1px solid var(--line-2);border-radius:8px;background:var(--surface);font-size:13px;font-weight:500;white-space:nowrap;color:var(--ink)}
+.period svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.vsec{background:var(--surface);border-radius:16px;padding:24px;display:flex;flex-direction:column;gap:16px;min-width:0}
+.vsec-h{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.vsec-h h2{margin:0;font-size:20px;font-weight:700;line-height:30px}
+.vsec-h .asof{font-size:12px;color:var(--ink-2)}
+.asum{background:var(--surface-2);border-radius:10px;padding:14px 18px 14px 16px;font-size:13px;line-height:20px;color:var(--ink)}
+.asum:empty{display:none}
+.asum-h{display:flex;align-items:center;gap:6px;margin-bottom:8px}
+.asum-h .tip-ic{width:20px}
+.asum-h b{font-size:13px;font-weight:700}
+.asum ul{margin:0;padding:0 0 0 2px;list-style:none;display:flex;flex-direction:column;gap:4px}
+.asum li{padding-left:14px;position:relative}
+.asum li::before{content:"•";position:absolute;left:0}
+.asum .em{color:var(--crit);font-weight:700}
+.vd{display:inline-flex;align-items:center;font-size:11px;font-weight:700;line-height:17px;padding:1px 8px;border-radius:5px;white-space:nowrap;width:max-content}
+.vd.v-wide{background:var(--crit-bg);color:var(--crit-ink)}
+.vd.v-multi{background:var(--v-multi-bg);color:var(--v-multi)}
+.vd.v-local{background:var(--v-local-bg);color:var(--v-local)}
+.vd.v-none{background:var(--v-none-bg);color:var(--ink-3)}
