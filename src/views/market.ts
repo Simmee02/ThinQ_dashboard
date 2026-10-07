@@ -1,38 +1,42 @@
-// VoC 분석(#voc) · 전체(기존 글로벌 VoC 동향) / 국가별 상세(사용 현황 → 현지화 니즈 → 현지화 기회 → 에이전트 제안)
-import { M, V, fill, col } from '../data/markets';
-import { D, STAGE_OF, ATTR, REV, FEAT, FEAT_AVG, type Cand } from '../data/locus';
-import { OPP } from '../data/opportunity';
+// VoC 분석(#voc) · 시장 하나를 골라 두 탭으로 봅니다
+//   AI 인사이트: 시장 진단(요약·KPI·이슈 프로필·판단 결과·같은 이슈가 있는 시장) → 확인할 과제
+//   데이터 분석: ThinQ 사용 현황(도넛) → 리뷰 추이(trend.ts) → 이슈 상세 분석(국가별 이슈 집중도·근거 리뷰)
+import { M, V } from '../data/markets';
+import { D, REV, type Cand } from '../data/locus';
 import { USAGE, ratio, RATIO_AVG } from '../data/usage';
-import { GOALS, suggest, type Goal } from '../data/agent';
-import { esc, copyText, AGENT_ICON } from '../shared/ui';
+import { esc, toast, AGENT_ICON } from '../shared/ui';
 import { go, setParam, currentRoute } from '../router';
 import { setMarket } from './trend';
+import { addFromVoc } from './issues';
 
-const BULB=AGENT_ICON;
-const tip=(t: string)=>`<div class="mk-tip">${BULB}<span><b class="tip-k">에이전트의 팁 :</b> ${t}</span></div>`;
-let cur=0,sel=0,goal: Goal='retain';
 const $=(id: string)=>document.getElementById(id)!;
-const vOf=(id: string)=>V.find(x=>x.id===id)!;
-const pill=v=>`<span class="pill" style="${v.id==='none'?'background:transparent;border-color:var(--line-2);color:var(--ink-3)':`background:color-mix(in oklab, ${col(v)} 16%, var(--surface));color:var(--ink)`}"><i style="background:${fill(v)}"></i>${v.name}</span>`;
+const vOf=(id: string)=>V.find(x=>x.id===id)||V[3];
+const f2=(n: number)=>n.toFixed(2);
+const nf=(n: number)=>n.toLocaleString('ko-KR');
+const THR=1.3, LOW=0.5;            // 현지화 니즈 기준 (국가별 이슈 집중도) · 평균보다 적게 언급된 이슈 기준
+const RESID_THR=2;                  // 현지화 니즈 기준 (표준화 잔차)
+let cur=0, sel=0, tab: 'ai'|'data'='ai', showAvg=false;
+const decided: Record<string,'ok'|'hold'>={};   // 확인할 과제 처리 상태 (시장|이슈)
 
-// 현지화 니즈마다 함께 봐야 할 다른 가능성 (기각 = 데이터로 이미 배제, 미확인 = 추가 확인 필요)
-function alts(c: Cand, name: string){
-  const d=D[name],small=M[cur][1];
-  const a: [string,string][]=[];
-  const byV={
-    wide:'여러 시장에 공통으로 나타남 → 이 시장의 현지 요인보다 앱·서버 공통 원인일 가능성이 큼',
-    group:`같은 그룹(${d.group}) 시장에도 나타남 → 그룹의 제품 구성(많이 쓰는 가전) 차이일 수 있음`,
-    part:'일부 이웃 시장에도 나타남 → 몇 개 시장 묶음의 공통 원인일 수 있음',
-    special:'이웃 시장에는 드묾 → 다만 쏠림만으로 현지화 원인을 확정할 수 없어 원문 검수가 필요함',
-    solo:'비교할 이웃 시장이 없음 → 공통 문제인지 이 시장만의 문제인지 규칙으로 판단할 수 없음',
-  };
-  a.push(['open',byV[c.k]]);
-  if(d.attr==='lang')a.push(['open',`${name} 리뷰는 여러 나라가 섞여 있음 → 특정 국가 문제로 볼 근거가 없음`]);
-  if(small)a.push(['open','분석 리뷰가 적음 → 국가별 이슈 집중도가 크게 흔들릴 수 있음']);
-  return a;
-}
+const asum=(lines: string[])=>`<div class="asum-h">${AGENT_ICON}<b>에이전트 요약</b></div><ul>${lines.map(l=>`<li>${l}</li>`).join('')}</ul>`;
+const badge=(v: string)=>`<span class="vd v-${v}">${vOf(v).name}</span>`;
+const red=(t: string|number)=>`<b class="em">${t}</b>`;
 
-// 언어권 드롭다운 (시장 목록 대신)
+// 판정 세부 규칙(k)별 설명
+const KIND: Record<string,{line:string; owner:string}>={
+  wide:{line:'여러 국가에서 동시에 발생하는 오류로 파악됨',owner:'본사 개발팀'},
+  group:{line:'같은 그룹의 여러 시장에서 함께 나타남',owner:'제품군·시장 묶음 담당'},
+  part:{line:'같은 그룹의 일부 시장에서 함께 나타남',owner:'제품군·시장 묶음 담당'},
+  special:{line:'이웃 시장에는 드물고 이 시장에서만 두드러짐 · 원인 검수 후 확정',owner:'검토 후 결정'},
+  solo:{line:'비교할 이웃 시장이 없어 이 시장만으로 판단함 · 원인 검수 후 확정',owner:'검토 후 결정'},
+};
+const kindOf=(c: Cand)=>KIND[c.k]||KIND.special;
+
+// 같은 이슈가 현지화 니즈로 잡힌 시장 (지금 시장 포함, 집중도 큰 순)
+const peersOf=(t: string)=>M.map((m,i)=>({name:m[0],i,c:D[m[0]].cands.find(y=>y.t===t)})).filter(o=>o.c).sort((a,b)=>b.c!.lift-a.c!.lift);
+// 이 이슈가 평균보다 크게 적은 시장 (예외로 표시)
+const lowestOf=(t: string)=>M.map(m=>({name:m[0],l:D[m[0]].lifts[t]})).filter(o=>o.l!=null&&o.l<LOW).sort((a,b)=>a.l-b.l)[0];
+
 function list(){
   const box=$('mk-select') as HTMLSelectElement;
   if(!box.options.length){
@@ -42,159 +46,225 @@ function list(){
   box.value=String(cur);
 }
 
+function setTab(t: 'ai'|'data'){
+  tab=t;
+  $('vt-ai').setAttribute('aria-selected',t==='ai');$('vt-data').setAttribute('aria-selected',t==='data');
+  $('vp-ai').hidden=t!=='ai';$('vp-data').hidden=t!=='data';$('vk-period').hidden=t!=='ai';
+}
+
 function draw(){
   if(currentRoute()==='voc')setParam(String(cur));
-  list();
-  setMarket(M[cur][0]);
-  const [name,small,n,,,vid]=M[cur],v=vOf(vid),d=D[name],cands=d.cands,at=ATTR[d.attr];
-  const c=cands[sel]||null;
-  $('dt-name').textContent=name;$('dt-pill').innerHTML='';
-  $('dt-attr').innerHTML=`<span class="attr ${d.attr}">${at.name}</span>`;
-  $('dt-small').innerHTML=small?'<span class="small-badge">리뷰 적음</span>':'';
+  list();setTab(tab);
+  const name=M[cur][0];
+  setMarket(name);
+  const d=D[name],cands=d.cands;
+  if(sel>=cands.length)sel=0;
+  drawAI(name,d,cands);
+  drawData(name,d,cands);
+}
 
-  // ThinQ 사용 현황 (## 목업데이터: src/data/usage.ts)
-  const u=USAGE[name],r=ratio(u)*100,avg=RATIO_AVG*100,low=r<avg;
-  // 도넛 3개: 우리(LG·ThinQ)만 빨간색, 나머지는 회색
-  $('ud-tiles').innerHTML=[
-    donut('LG 가전 점유율',u.share,'LG','기타 브랜드','이 나라 가전 시장에서 LG가 차지하는 비중',false),
-    donut('ThinQ 앱 점유율',u.app,'ThinQ','기타 스마트홈 앱','이 나라 스마트홈 앱 사용자 중 ThinQ 비중',false),
-    donut('점유율 대비 사용률',Math.round(r),'ThinQ 사용','미사용',`LG 가전 가구 중 ThinQ를 쓰는 비율 · 17개 시장 평균 ${avg.toFixed(0)}%`,low),
-  ].join('');
-  $('ud-tip').innerHTML=tip(low
-    ?`${esc(name)}은(는) LG 가전 점유율에 비해 ThinQ 사용률이 평균보다 낮습니다. <b>시장 분석</b>의 경쟁 앱 비교와 아래 현지 기능 공백에서 이유를 먼저 찾아보세요.`
-    :`${esc(name)}은(는) 점유율 대비 사용률이 평균 이상입니다. 기존 사용자가 겪는 <b>현지화 니즈</b>를 먼저 보세요.`);
-
-  // 요약: 핵심 숫자 3개 + 한 문단 요약 + 귀속 수준 안내
-  $('dt-meta').innerHTML=[['시장 그룹',d.group],['분석 리뷰',n.toLocaleString('ko-KR')+'건'],['현지화 니즈',cands.length?cands.length+'건':'없음']]
-    .map(([k,val])=>`<span><em>${k}</em><b>${esc(val)}</b></span>`).join('');
-  $('dt-attr').title=at.note;
-
-  // 국가별 이슈 집중도: 현지화 니즈는 판정 색으로 표시
-  const rows=Object.entries(d.lifts).map(([t,l])=>({t,l,c:cands.find(x=>x.t===t)})).sort((a,b)=>b.l-a.l);
-  const LM=Math.max(4,Math.ceil(Math.max(...rows.map(r=>r.l))));
-  $('dt-topics').innerHTML=rows.map(r=>{
-    const vv=r.c?vOf(r.c.v):null;
-    return `<div class="row ${r.c?'top':''} ${r.c&&r.c===c?'sel':''}"><span class="nm">${vv?`<i class="vdot" style="background:${fill(vv)}" title="${vv.name}"></i>`:'<i class="vdot off"></i>'}${r.t}</span><div class="track"><div class="fill" style="width:${Math.min(100,r.l/LM*100)}%;${vv?`background:${col(vv)}`:''}"></div><div class="one" style="left:${100/LM}%"></div></div><b>${r.l.toFixed(2)}</b></div>`;
-  }).join('')
-    +tip(cands.length
-      ?`색이 칠해진 이슈가 현지화 니즈입니다. ${cands[0].t} ${cands[0].lift.toFixed(2)}는 ${name}에서 이 이슈의 비중이 전체 국가 평균의 ${cands[0].lift.toFixed(2)}배라는 뜻입니다.`
-      :`${name}은(는) 전체 국가 평균보다 뚜렷하게 많은 이슈가 없어 현지화 니즈가 없습니다.`);
-
-  // 현지화 니즈 요약
-  let sum: string;
-  if(!c)sum=`${name}은(는) 분석 리뷰 ${n.toLocaleString('ko-KR')}건 중 판정 기준을 넘는 이슈가 없어 현지화 니즈를 만들지 않았습니다. 특정 이슈가 다른 시장보다 두드러지지 않는다는 뜻이며, 문제가 없다는 뜻은 아닙니다.`;
+// ---------- AI 인사이트 ----------
+function drawAI(name: string, d: typeof D[string], cands: Cand[]){
+  const n=M[cur][2],c0=cands[0];
+  const lines: string[]=[];
+  if(!c0)lines.push(`${esc(name)}은(는) 판정 기준을 넘는 이슈가 없어 <b>판정 보류</b>입니다. 특정 이슈가 다른 시장보다 두드러지지 않는다는 뜻이며, 문제가 없다는 뜻은 아닙니다.`);
   else{
-    const c0=cands[0],v0=vOf(c0.v);
-    sum=`${name}의 1순위 현지화 니즈는 <b>${STAGE_OF[c0.t]}</b> 단계의 <b>${c0.t}</b>입니다. 전체 국가 평균 대비 <b>${c0.lift.toFixed(2)}배</b> 많이 언급되며, 판정은 <b>${v0.name}</b>(${c0.rule})입니다. `;
-    if(cands.length>1)sum+=`이 밖에 ${cands.slice(1).map(x=>`${x.t}(${vOf(x.v).name})`).join(', ')}도 현지화 니즈입니다. `;
-    if(d.attr==='lang')sum+=`${name}은 언어권 단위라 국가별 결론으로 쓰기 전에 사내 데이터로 국가를 먼저 확정해야 합니다.`;
-    else if(small)sum+=`분석 리뷰가 ${n.toLocaleString('ko-KR')}건으로 적어 해석에 주의가 필요합니다.`;
+    lines.push(`${esc(name)}의 1순위 이슈는 <b>${esc(c0.t)}</b>입니다.`);
+    cands.slice(0,3).forEach(c=>lines.push(`<b>${esc(c.t)}</b>(${f2(c.lift)}배)는 ${c.v==='wide'?'여러 그룹 시장에 공통으로 나타나':c.v==='multi'?'같은 그룹 시장에도 나타나':c.k==='solo'?'비교할 이웃 시장 없이 '+esc(name)+'에서 두드러져, 원인 검수 후':esc(name)+'에서만 두드러져, 원인 검수 후'} <b>${vOf(c.v).name}</b>${c.v==='local'?'로 확정이 필요합니다.':'로 판단했습니다.'}`));
   }
-  $('dt-sum').innerHTML=sum;
+  if(d.attr==='lang')lines.push(`${esc(name)}은 여러 나라가 섞인 언어권이라, 국가별 결론으로 쓰기 전에 사내 데이터로 국가를 먼저 확정해야 합니다.`);
+  $('ai-sum').innerHTML=asum(lines);
 
-  // 현지화 니즈와 검토할 점
-  $('dt-cands').innerHTML=cands.length?cands.map((x,i)=>{
-    const vv=vOf(x.v);
-    return `<button type="button" class="cand" data-i="${i}" aria-pressed="${i===sel}">
-      <div class="cand-h">${pill(vv)}<b>${x.t}</b><span class="stage-tag">${STAGE_OF[x.t]}</span></div>
-      <div class="cand-m"><span>국가별 이슈 집중도 <b>${x.lift.toFixed(2)}</b></span><span>${x.rule}</span></div>
-      <div class="cand-d">${vv.desc}</div>
-      <ul class="alts">${alts(x,name).map(([s,t])=>`<li><span class="alt ${s}">${s==='rejected'?'기각':'미확인'}</span>${t}</li>`).join('')}</ul>
-    </button>`;
-  }).join(''):`<div class="empty-note">현지화 니즈가 없어 검토할 점도 따로 정리하지 않았습니다.</div>`;
-  $('dt-cands').querySelectorAll<HTMLElement>('.cand').forEach(b=>b.onclick=()=>{sel=+b.dataset.i!;draw()});
+  $('ai-kpis').innerHTML=[
+    ['분석 리뷰',`${nf(n)}건`,M[cur][1]?'리뷰 적음':'총 리뷰'],
+    ['발견된 현지화 니즈',`${cands.length}개`,cands.length?'':'판정 보류'],
+    ['1순위 이슈 집중도',c0?f2(c0.lift):'—',c0?esc(c0.t):''],
+  ].map(([k,v,s])=>`<div class="vkpi"><span class="k">${k}</span><div class="b"><b>${v}</b>${s?`<span>${s}</span>`:''}</div></div>`).join('');
 
-  opportunity(name);
-  agent(name,c);
+  radar(name,d,cands);
+  const c=cands[sel]||null;
 
-  // 같은 현지화 니즈가 있는 시장
-  const same=c?M.map((m,i)=>({m,i,x:D[m[0]].cands.find(y=>y.t===c.t)})).filter(o=>o.i!==cur&&o.x):[];
-  $('dt-peers').innerHTML=same.length?same.map(o=>{const vv=vOf(o.x.v);return`<div class="peer"><i style="width:8px;height:8px;border-radius:2px;background:${fill(vv)}"></i><span class="nm"><button data-i="${o.i}">${o.m[0]}</button></span><b>${o.x.lift.toFixed(2)}</b></div>`}).join('')
-    :`<div class="empty-note">${c?'같은 이슈가 현지화 니즈인 다른 시장이 없습니다.':'현지화 니즈가 없어 비교할 수 없습니다.'}</div>`;
-  $('dt-peer-sub').innerHTML=same.length?`<span class="sub">${c.t} · 오른쪽은 국가별 이슈 집중도</span>`:'';
-  $('dt-peers').querySelectorAll<HTMLElement>('button').forEach(b=>b.onclick=()=>{cur=+b.dataset.i!;const k=D[M[cur][0]].cands.findIndex(y=>y.t===c!.t);sel=Math.max(0,k);draw()});
+  // 판단 결과
+  $('ai-verdicts').innerHTML=cands.length?cands.map((x,i)=>`<button type="button" class="vdc" data-i="${i}" aria-pressed="${i===sel}">
+      ${badge(x.v)}<b>${esc(x.t)}</b>
+      <span class="l1">${esc(name)}에서 ${f2(x.lift)}로, 이슈 집중도가 높게 나타납니다.</span>
+      <span class="l2">${kindOf(x).line}</span>
+      <span class="l3">담당 범위 <b>${kindOf(x).owner}</b></span>
+    </button>`).join('')
+    :`<div class="empty-note">판정 기준(이슈 집중도 ${THR} 이상, 표준화 잔차 ${RESID_THR} 이상)을 넘는 이슈가 없습니다.</div>`;
+  $('ai-verdicts').querySelectorAll<HTMLElement>('.vdc').forEach(b=>b.onclick=()=>{sel=+b.dataset.i!;draw()});
+
+  // 같은 현지화 이슈가 있는 시장 (막대 그라데이션: 집중도 큰 순으로 진한 빨강 → 연한 빨강)
+  if(!c){$('pe-sub').textContent='이슈 집중도 순';$('ai-peers').innerHTML='<div class="empty-note">현지화 니즈가 없어 비교할 시장이 없습니다.</div>'}
+  else{
+    const ps=peersOf(c.t),mx=ps[0].c!.lift,low=lowestOf(c.t);
+    $('pe-sub').textContent=`${c.t} · 이슈 집중도 순`;
+    $('ai-peers').innerHTML=`<div class="pe-hd"><span>시장</span><span>집중도</span></div>`
+      +ps.map((o,k)=>{const p=Math.round(100-k*(85/Math.max(1,ps.length-1)));const me=o.i===cur;
+        return `<button type="button" class="pe${me?' me':''}" data-i="${o.i}" ${me?'aria-current="true"':''}>
+          <span class="bar" style="width:${Math.max(28,o.c!.lift/mx*100)}%;background:color-mix(in srgb,var(--crit) ${p}%,var(--surface));color:${p>=55?'#fff':'var(--ink-2)'}">${esc(o.name)}</span>
+          <b>${f2(o.c!.lift)}</b></button>`}).join('')
+      +(ps.length===1?'<div class="empty-note">같은 이슈가 현지화 니즈인 다른 시장이 없습니다.</div>':'')
+      +(low?`<p class="pe-note">*반대로 ${esc(low.name)}은(는) ${f2(low.l)}로 평균보다 크게 낮음</p>`:'');
+    $('ai-peers').querySelectorAll<HTMLElement>('.pe:not(.me)').forEach(b=>b.onclick=()=>{const i=+b.dataset.i!;const k=D[M[i][0]].cands.findIndex(y=>y.t===c.t);cur=i;sel=Math.max(0,k);showAvg=false;go('voc',String(i))});
+  }
+
+  // 확인할 과제
+  $('task-sum').innerHTML=asum(cands.length
+    ?[`${red(cands.length+'건')}을 확인할 과제로 골랐습니다.`,'첨부된 근거와 설명을 통해 이슈의 내용을 확정해주세요.']
+    :['판정 기준을 넘는 이슈가 없어 확인할 과제가 없습니다.']);
+  $('tasks').innerHTML=cands.map((x,i)=>task(name,d,x,i)).join('');
+  $('tasks').querySelectorAll<HTMLElement>('.task').forEach(t=>{
+    const i=+t.dataset.i!,x=cands[i],key=name+'|'+x.t;
+    t.onclick=e=>{if((e.target as HTMLElement).closest('button'))return;if(sel!==i){sel=i;draw()}};
+    t.querySelector<HTMLElement>('[data-a="ok"]')!.onclick=()=>{
+      if(decided[key]==='ok')return;
+      decided[key]='ok';sel=i;
+      const id=addFromVoc({title:`${x.t} (${name})`,verdict:x.v as any,langs:[name],topic:x.t,
+        why:`VoC 분석에서 승인한 이슈입니다. ${name}에서 이슈 집중도 ${f2(x.lift)} · ${vOf(x.v).name}.`});
+      toast(`${id} · 이슈보드 신규 열에 올렸습니다`);draw();
+    };
+    t.querySelector<HTMLElement>('[data-a="hold"]')!.onclick=()=>{if(decided[key]==='ok')return;decided[key]=decided[key]==='hold'?undefined:'hold';sel=i;draw()};
+    t.querySelector<HTMLElement>('[data-a="rv"]')!.onclick=()=>{sel=i;setTab('data');draw();$('rv-title').scrollIntoView({block:'center'})};
+  });
+}
+
+function task(name: string, d: typeof D[string], x: Cand, i: number){
+  const key=name+'|'+x.t,st=decided[key],ps=peersOf(x.t),low=lowestOf(x.t);
+  // 우선순위 판단: 표준화 잔차(리뷰 수를 감안한 쏠림 크기)를 기준 2와 비교. 기준의 2배 이상이면 '기준 위', 그 아래는 '기준 근처'
+  const pos=(r: number)=>Math.min(100,Math.log2(1+r)/Math.log2(1+32)*100);
+  const above=x.resid>=RESID_THR*2;
+  const ev=[`이슈 집중도 ${f2(x.lift)} · 표준화 잔차 ${x.resid.toFixed(1)} - 리뷰 수를 감안해도 우연이 아닌 차이`];
+  if(x.v==='wide')ev.push(`같은 이슈가 ${ps.length}개 시장에 나타남${low?` (${esc(low.name)}은 예외 ${f2(low.l)})`:''}`);
+  else if(x.v==='multi')ev.push(`같은 그룹(${esc(d.group)}) 시장에도 나타남 · ${esc(x.rule)}`);
+  else ev.push(x.k==='solo'?`비교할 이웃 시장이 없어 ${esc(name)} 단독으로 판단함`:`${esc(name)}에서만 나타나는 이슈로 ${vOf(x.v).name}로 판단됨`);
+  ev.push(`2023.09 – 2026.09 리뷰 ${nf(M[cur][2])}건 기준`);
+  const chk: [boolean,string][]=[[true,'7월 장애로 인한 문제가 아님 : 장애 구간(07-01 – 08-01)을 빼고 계산함']];
+  if(x.v==='local')chk.push([false,'대표 리뷰 검토를 통해 원인 판단 필요']);
+  chk.push([false,'제품 구성, OS, 앱 버전 차이로 설명되는지 담당자의 판단 필요']);
+  if(d.attr==='lang')chk.push([false,'여러 나라가 섞인 언어권이라 어느 나라 문제인지 확인 필요']);
+  if(M[cur][1])chk.push([false,'분석 리뷰가 적어 이슈 집중도가 크게 흔들릴 수 있음']);
+  return `<article class="task${i===sel?' on':''}" data-i="${i}">
+    <span class="no">이슈 ${i+1}</span>
+    <h3>${esc(x.t)}</h3>
+    ${badge(x.v)}
+    <div class="urg"><span class="k">우선순위 판단</span>
+      <div class="trk"><i class="fill${above?' hi':''}" style="width:${pos(x.resid)}%"></i><i class="thr" style="left:${pos(RESID_THR*2)}%"></i></div>
+      <b class="${above?'hi':''}">${above?'기준 위':'기준 근처'}</b></div>
+    <h4>근거</h4><ul class="ev">${ev.map(t=>`<li>${t}</li>`).join('')}</ul>
+    <h4>확인이 필요한 내용</h4><ul class="ck">${chk.map(([ok,t])=>`<li class="${ok?'ok':'q'}"><i>${ok?'✓':'?'}</i><span><b>${t.split(' : ')[0]}</b>${t.includes(' : ')?' : '+t.split(' : ')[1]:''}</span></li>`).join('')}</ul>
+    <p class="own">담당 범위 <b>${kindOf(x).owner}</b></p>
+    <div class="acts">
+      ${st==='ok'?'<span class="done">이슈보드에 올림</span>':''}
+      <button type="button" class="btn dark" data-a="ok" ${st==='ok'?'disabled':''}>${st==='ok'?'승인됨':'이슈 승인'}</button>
+      <button type="button" class="btn" data-a="hold" aria-pressed="${st==='hold'}" ${st==='ok'?'disabled':''}>${st==='hold'?'보류됨':'보류'}</button>
+      <button type="button" class="btn" data-a="rv">근거 리뷰 보기</button>
+    </div>
+  </article>`;
+}
+
+// 이슈 프로필: 이 시장 집중도 상위 6개 이슈 · 빨강 = 고른 시장, 회색 = 한국(고른 시장이 한국이면 전체 평균 1.0)
+function radar(name: string, d: typeof D[string], cands: Cand[]){
+  const base=name==='한국'?null:D['한국'],baseName=base?'한국':'전체 평균';
+  $('rd-key').innerHTML=`<span><i class="me"></i>${esc(name)}</span><span><i></i>${baseName}</span>`;
+  const ax=Object.entries(d.lifts).sort((a,b)=>b[1]-a[1]).slice(0,6).map(([t,l])=>({t,l,b:base?base.lifts[t]:1,c:cands.some(c=>c.t===t)}));
+  const W=322,H=262,cx=W/2,cy=H/2+4,R=78,n=ax.length;
+  const mx=Math.max(2,...ax.map(a=>Math.max(a.l,a.b)))*1.05;
+  const pt=(i: number,v: number)=>{const a=-Math.PI/2+i*2*Math.PI/n,r=R*Math.min(v,mx)/mx;return [cx+r*Math.cos(a),cy+r*Math.sin(a)]};
+  const poly=(vals: number[])=>vals.map((v,i)=>pt(i,v).map(z=>z.toFixed(1)).join(',')).join(' ');
+  let g='';
+  [1/3,2/3,1].forEach(f=>g+=`<polygon points="${poly(ax.map(()=>mx*f))}" fill="none" stroke="var(--line)"/>`);
+  ax.forEach((_,i)=>{const [x,y]=pt(i,mx);g+=`<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="var(--line)"/>`});
+  g+=`<polygon points="${poly(ax.map(a=>a.b))}" fill="var(--ink-3)" fill-opacity=".18" stroke="var(--ink-2)" stroke-dasharray="3 3"/>`;
+  g+=`<polygon points="${poly(ax.map(a=>a.l))}" fill="var(--crit)" fill-opacity=".16" stroke="var(--crit)" stroke-width="1.5"/>`;
+  ax.forEach((a,i)=>{const [x,y]=pt(i,a.l);g+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.5" fill="var(--crit)" stroke="var(--surface)" stroke-width="1.5"><title>${esc(a.t)} ${f2(a.l)} · ${baseName} ${f2(a.b)}</title></circle>`});
+  ax.forEach((a,i)=>{
+    const ang=-Math.PI/2+i*2*Math.PI/n,lx=cx+(R+16)*Math.cos(ang),ly=cy+(R+16)*Math.sin(ang);
+    const anc=Math.abs(Math.cos(ang))<.2?'middle':Math.cos(ang)>0?'start':'end';
+    const y0=Math.sin(ang)<-.5?ly-16:Math.sin(ang)>.5?ly+4:ly-6;
+    g+=`<text x="${lx.toFixed(1)}" y="${y0.toFixed(1)}" text-anchor="${anc}" class="rl">${esc(a.t)}</text><text x="${lx.toFixed(1)}" y="${(y0+15).toFixed(1)}" text-anchor="${anc}" class="rv${a.c?' hi':''}">${f2(a.l)}</text>`;
+  });
+  $('ai-radar').innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(name)} 이슈 프로필 (상위 ${n}개 이슈, ${baseName}와 비교)">${g}</svg>`;
+}
+
+// ---------- 데이터 분석 ----------
+function drawData(name: string, d: typeof D[string], cands: Cand[]){
+  // ThinQ 사용 현황 (## 목업데이터: src/data/usage.ts)
+  const u=USAGE[name],r=Math.round(ratio(u)*100),avg=Math.round(RATIO_AVG*100),dv=r-avg;
+  const ul=[`${esc(name)}은(는) ThinQ 앱 점유율(${red(u.app+'%')})이 LG 가전 점유율(${red(u.share+'%')})보다 ${u.app>=u.share?'높은':'낮은'} 시장입니다.`];
+  if(dv<0)ul.push(`LG 가전 가구 중 ThinQ를 쓰는 비율이 17개 시장 평균보다 ${red(-dv+'%p')} 낮습니다. 시장 분석의 경쟁 앱 비교에서 이유를 찾아보세요.`);
+  $('ud-sum').innerHTML=asum(ul);
+  $('ud-tiles').innerHTML=[
+    donut('LG 가전 점유율',u.share,'LG','기타 브랜드','이 나라 가전 시장에서 LG가 차지하는 비중',''),
+    donut('ThinQ 앱 점유율',u.app,'ThinQ','기타 스마트홈 앱','스마트홈 앱 사용자 중 ThinQ 비중',''),
+    donut('점유율 대비 사용률',r,'ThinQ 사용','미사용',`LG 가전 가구 중 ThinQ를 쓰는 비율 · 17개 시장 평균 ${avg}%`,`<span class="delta ${dv<0?'down':'up'}">평균 대비 ${dv>0?'+':''}${dv}%p</span>`),
+  ].join('');
+
+  // 이슈 상세 분석: 국가별 이슈 집중도 (로그 눈금, 1.0 = 17개 시장 평균)
+  const rows=Object.entries(d.lifts).map(([t,l])=>({t,l,c:cands.find(x=>x.t===t)})).sort((a,b)=>b.l-a.l);
+  const up=rows.filter(r=>r.c),low=rows.filter(r=>!r.c&&r.l<LOW),mid=rows.filter(r=>!r.c&&r.l>=LOW);
+  const total=rows.length;
+  $('is-sum').innerHTML=asum([
+    `이번 실행에서 AI가 만든 이슈 ${red(total+'개')} 중 기준(이슈 집중도 ≥ ${THR}, 잔차 ≥ ${RESID_THR})을 넘어 쏠린 것은 ${red(up.length+'개')}입니다.`,
+    (low.length?`${low.map(r=>esc(r.t)).join(', ')}은(는) 평균의 절반 이하로 적게 언급되고, `:'')+`나머지 ${mid.length}개는 평균 수준이라 접어 두었습니다.`
+  ]);
+  const L0=Math.log2(0.18),L1=Math.log2(5.6),pos=(v: number)=>(Math.log2(Math.max(0.18,Math.min(5.6,v)))-L0)/(L1-L0)*100;
+  const sc=cands[sel];
+  const bar=(r: typeof rows[number])=>{const a=pos(Math.min(1,r.l)),b=pos(Math.max(1,r.l));
+    const cls=r.l<1?'lo':r.c===sc?'hi':'up';
+    return `<i class="bar ${cls}" style="left:${a}%;width:${Math.max(.6,b-a)}%"></i>`};
+  const row=(r: typeof rows[number])=>`<div class="cr${r.c?' c1':''}${r.c&&r.c===sc?' on':''}"${r.c?` role="button" tabindex="0" data-t="${esc(r.t)}"`:''}>
+      <span class="nm"><b>${esc(r.t)}</b>${r.c?badge(r.c.v):''}</span><div class="ct">${bar(r)}</div><b class="val">${f2(r.l)}</b></div>`;
+  const ticks=[0.25,0.5,1,2,4];
+  $('dt-topics').innerHTML=`
+    <div class="cr ax"><span class="nm"></span><div class="ct">${ticks.map(t=>`<span class="tk${t===1?' one':''}" style="left:${pos(t)}%">${t===1?'1.0':t}</span>`).join('')}<span class="tk thr" style="left:${pos(THR)}%">기준 ${THR}</span></div><span class="val"></span></div>
+    <div class="cbody">
+      <div class="grid-l">${ticks.map(t=>`<i class="${t===1?'one':''}" style="left:${pos(t)}%"></i>`).join('')}<i class="thr" style="left:${pos(THR)}%"></i></div>
+      <div class="cg">기준을 넘어 쏠린 이슈 <em>${up.length}개</em></div>${up.map(row).join('')||'<div class="cnone">없음</div>'}
+      ${low.length?`<div class="cg">평균보다 적게 언급된 이슈 <em>${low.length}개</em></div>${low.map(row).join('')}`:''}
+      ${mid.length?`<button type="button" class="cmid" id="cc-mid" aria-expanded="${showAvg}">${showAvg?'▾':'▸'}  <b>평균 수준 이슈 ${mid.length}개</b>  ·  ${mid.map(r=>esc(r.t)).join(', ')}</button>${showAvg?mid.map(row).join(''):''}`:''}
+    </div>
+    <p class="cfoot">분석 제외: 긍정 리뷰 · 기타 기능 요청</p>`;
+  if(mid.length)$('cc-mid').onclick=()=>{showAvg=!showAvg;draw();$('cc-mid').focus()};
+  $('dt-topics').querySelectorAll<HTMLElement>('.cr.c1').forEach(b=>{const go2=()=>{sel=cands.findIndex(x=>x.t===b.dataset.t);draw()};b.onclick=go2;b.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go2()}}});
 
   // 근거 리뷰: 샘플 원문이 있으면 그대로, 없으면 자리 표시
-  const rv=c?(REV[name]||[]).filter(r=>r.t===c.t).slice(0,3):[];
+  $('rv-sub').textContent=sc?`${sc.t} · 1–2점 · 장애 구간 제외`:'현지화 니즈 없음';
+  const rv=sc?(REV[name]||[]).filter(x=>x.t===sc.t).slice(0,3):[];
+  const stars=(s: number)=>`<span class="stars">${'★'.repeat(s)}<span class="off">${'★'.repeat(5-s)}</span></span>`;
   $('dt-reviews').innerHTML=rv.length
-    ?rv.map(r=>`<div class="rv"><div class="meta"><span class="stars">${'★'.repeat(r.s)}<span style="color:var(--line-2)">${'★'.repeat(5-r.s)}</span></span><span>${r.at}</span><span>${r.lang}</span></div><p class="rv-x">${esc(r.x)}</p></div>`).join('')
-    :[1,1,2].map((st,k)=>`<div class="rv"><div class="meta"><span class="stars">${'★'.repeat(st)}<span style="color:var(--line-2)">${'★'.repeat(5-st)}</span></span><span>${c?c.t:'현지화 니즈 없음'}</span></div><div class="ln" style="width:${92-k*9}%"></div><div class="ln" style="width:${70-k*12}%"></div></div>`).join('')
-      +`<div class="empty-note">${c?'샘플 데이터에 이 현지화 니즈의 원문이 없어 자리만 표시했습니다.':''}</div>`;
+    ?rv.map(x=>`<div class="rv2"><div class="meta">${stars(x.s)}<span>${esc(x.lang)} · ${esc(x.at)}</span></div><p>${esc(x.x)}</p></div>`).join('')
+    :[1,1,2].map((s,k)=>`<div class="rv2"><div class="meta">${stars(s)}<span>${esc(name)} · 2026.09</span></div><i class="ln" style="width:${92-k*9}%"></i><i class="ln" style="width:${70-k*12}%"></i></div>`).join('');
 }
-document.querySelectorAll<HTMLElement>('#ag-goal button').forEach(b=>b.onclick=()=>{goal=b.dataset.g as Goal;draw()});
-
-// ---------- 현지화 기회 ----------
-const todo=(items: string[])=>`<ul class="todo">${items.map(t=>`<li>${t}</li>`).join('')}</ul>`;
-const state=(done: boolean)=>`<span class="opp-badge ${done?'done':''}">${done?'조사 완료':'조사 전'}</span>`;
-function opportunity(name: string){
-  const o=OPP[name]||{competitors:[],devices:[]},f=FEAT[name];
-  // 예시 2: 현지 기능 공백
-  const high=f.lift>=1.3&&f.resid>=2;
-  $('lf-badge').innerHTML=state(o.devices.length>0);
-  $('lf-body').innerHTML=`
-    <div class="opp-metric"><span>기능 요청·기타 리뷰 비중</span><b>${f.share.toFixed(1)}% <small>전체 국가 평균 ${FEAT_AVG.toFixed(1)}%</small>${high?'<i class="flag">평균보다 많음</i>':''}</b><em>국가별 이슈 집중도 ${f.lift.toFixed(2)} · ${f.count.toLocaleString('ko-KR')}건 · 현지화 니즈 판정에서는 제외한 분류</em></div>
-    ${o.devices.length?`<ul class="devs">${o.devices.map(x=>`<li><div><b>${esc(x.device)}</b><span>${esc(x.note)}</span><span class="opp-src">출처 · ${esc(x.source)}</span></div><span class="sup ${x.inThinq==='미지원'?'no':x.inThinq==='지원'?'yes':''}">${x.inThinq}</span></li>`).join('')}</ul>`
-    :`<div class="opp-empty"><b>${esc(name)}의 현지 특화 가전을 아직 조사하지 않았습니다</b>${todo(['이 나라에서 많이 쓰는 현지 특화 가전·기능','ThinQ 앱 지원 여부','관련 기능 요청 리뷰'])}</div>`}
-    ${tip(`이 분류에는 기능 요청 말고 일반 칭찬도 섞여 있습니다. 현지 가전·기능 이름으로 다시 걸러야 근거로 쓸 수 있습니다.${high?` ${esc(name)}은(는) 이 비중이 평균보다 뚜렷이 높아 먼저 볼 만합니다.`:''}`)}`;
-}
-
-// ---------- 에이전트 제안 ----------
-let agentText='';
-function agent(name: string, c: Cand | null){
-  document.querySelectorAll<HTMLElement>('#ag-goal button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.g===goal)));
-  const box=$('ag-body'),g=GOALS[goal];
-  const sg=c?suggest(name,c.t,goal):null;
-  if(!c||!sg){
-    box.innerHTML=tip(`${esc(name)}은(는) 현지화 니즈가 없어 제안을 만들지 않았습니다. 다른 시장과 비교해 두드러진 이슈가 생기면 제안이 나타납니다.`);
-    agentText='';return;
-  }
-  const v=vOf(c.v);
-  box.innerHTML=`
-    <p class="ag-lead">${esc(g.label)} 목표는 <b>${esc(g.stage)}</b> 단계의 문제입니다. 선택한 현지화 니즈 <b>${esc(c.t)}</b>(국가별 이슈 집중도 ${c.lift.toFixed(2)} · ${v.name})가 이 목표를 막는지, 사내 데이터로 먼저 확인할 지표를 제안합니다.${sg.lang?` <span class="small-badge">언어권 참고 · 국가 확정 필요</span>`:''}</p>
-    <div class="ag-grid">
-      <div class="ag-col">
-        <div class="ag-h">확인할 내부 지표</div>
-        <ol class="ag-met">${sg.metrics.map((m,i)=>`<li class="${i===0?'top':''}">
-          <div class="ag-row"><b>${esc(m.name)}</b>${i===0?'<span class="ag-first">먼저 확인</span>':''}</div>
-          <span class="ag-why">${esc(m.why)}</span>
-          <span class="ag-meta"><em>판단 기준</em> ${esc(m.rule)}</span>
-          <span class="ag-meta"><em>사내 데이터</em> ${esc(m.src)}</span>
-        </li>`).join('')}</ol>
-      </div>
-      <div class="ag-col">
-        <div class="ag-h">개선 방향 후보</div>
-        ${sg.solutions.map(s=>`<div class="ag-sol"><b>${esc(s.name)}</b><span>${esc(s.what)}</span><span class="ag-meta"><em>효과 확인</em> ${esc(s.measure)}</span></div>`).join('')}
-      </div>
-    </div>
-    <div class="mk-tip ag-foot">${BULB}<span><b class="tip-k">에이전트의 팁 :</b> '먼저 확인' 지표로 현지화 니즈가 맞는지 확인한 뒤 개선 방향을 고르세요.</span><button type="button" class="ag-copy" id="ag-copy">제안 복사</button></div>`;
-  agentText=[`[에이전트 제안] ${name} · ${g.label}`,`현지화 니즈: ${c.t} (${STAGE_OF[c.t]} · 국가별 이슈 집중도 ${c.lift.toFixed(2)} · ${v.name})`,'','확인할 내부 지표',...sg.metrics.map((m,i)=>`- ${m.name}${i===0?' [먼저 확인]':''}: ${m.why} / 판단 기준: ${m.rule} / 데이터: ${m.src}`),'','개선 방향 후보',...sg.solutions.map(s=>`- ${s.name}: ${s.what} (효과 확인: ${s.measure})`),'','공개 리뷰 기반 가설 · AI 생성 초안 · 미검토'].join('\n');
-  $('ag-copy').onclick=()=>copyText(agentText,'에이전트 제안을 복사했습니다');
-}
-
 
 // 도넛 차트 한 개 (빨강 = LG·ThinQ, 회색 = 나머지)
-function donut(title: string, pct: number, main: string, rest: string, sub: string, low: boolean){
-  const R=38,C=2*Math.PI*R,a=pct/100*C,g=1.5;
-  return `<figure class="dn ${low?'low':''}">
-    <figcaption>${title}${low?'<i class="flag">평균보다 낮음</i>':''}</figcaption>
-    <div class="dn-body">
-      <svg viewBox="0 0 100 100" role="img" aria-label="${title} ${pct}%">
-        <circle cx="50" cy="50" r="${R}" class="d-rest" stroke-dasharray="${Math.max(0,C-a-g*2)} ${C}" stroke-dashoffset="${-(a+g)}" transform="rotate(-90 50 50)"><title>${rest} ${100-pct}%</title></circle>
-        <circle cx="50" cy="50" r="${R}" class="d-main" stroke-dasharray="${a} ${C}" transform="rotate(-90 50 50)"><title>${main} ${pct}%</title></circle>
-        <text x="50" y="55" text-anchor="middle" class="d-val">${pct}%</text>
-      </svg>
-      <ul class="dn-key"><li><i class="k main"></i>${main} <b>${pct}%</b></li><li><i class="k"></i>${rest} <b>${100-pct}%</b></li></ul>
+function donut(title: string, pct: number, main: string, rest: string, sub: string, extra: string){
+  const R=38,C=2*Math.PI*R,a=pct/100*C,g=1.2;
+  return `<figure class="dn2">
+    <figcaption>${title}${extra}</figcaption>
+    <svg viewBox="0 0 100 100" role="img" aria-label="${title} ${pct}%">
+      <circle cx="50" cy="50" r="${R}" class="d-rest" stroke-dasharray="${Math.max(0,C-a-g*2)} ${C}" stroke-dashoffset="${-(a+g)}" transform="rotate(-90 50 50)"><title>${rest} ${100-pct}%</title></circle>
+      <circle cx="50" cy="50" r="${R}" class="d-main" stroke-dasharray="${a} ${C}" transform="rotate(-90 50 50)"><title>${main} ${pct}%</title></circle>
+      <text x="50" y="57" text-anchor="middle" class="d-val">${pct}%</text>
+    </svg>
+    <div class="dn2-r">
+      <ul><li class="me"><i></i>${main}<b>${pct}%</b></li><li><i></i>${rest}<b>${100-pct}%</b></li></ul>
+      <p>${sub}</p>
     </div>
-    <p>${sub}</p>
   </figure>`;
 }
 
+$('vt-ai').onclick=()=>{setTab('ai');window.scrollTo(0,0)};
+$('vt-data').onclick=()=>{setTab('data');window.scrollTo(0,0)};
+$('view-mk').querySelector('.vtabs')!.addEventListener('keydown',(e: KeyboardEvent)=>{
+  if(e.key!=='ArrowLeft'&&e.key!=='ArrowRight')return;
+  const n=tab==='ai'?'data':'ai';setTab(n);$(n==='ai'?'vt-ai':'vt-data').focus();
+});
+
 // 라우터가 #voc 를 보여 줄 때 호출: #voc.3 이면 4번째 시장, 숫자가 없으면 보던 시장 그대로
 export function onShow(param){
-  if(param!==''&&!isNaN(+param)){const i=Math.max(0,Math.min(M.length-1,+param));if(i!==cur)sel=0;cur=i}
+  if(param!==''&&!isNaN(+param)){const i=Math.max(0,Math.min(M.length-1,+param));if(i!==cur){sel=0;showAvg=false}cur=i}
   draw();
 }
-// 다크 모드 전환 등으로 색이 바뀌면 다시 그립니다
+// 다크 모드 전환 등으로 다시 그릴 때 (market-overview.ts 에서도 씁니다)
 export function redrawDetail(){if(!$('view-mk').hidden)draw()}
-try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',redrawDetail)}catch(e){}
-new MutationObserver(redrawDetail).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});

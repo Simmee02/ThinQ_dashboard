@@ -416,3 +416,98 @@
 #view-is .ops-agent .ops-res{flex:0 0 100%}
 #view-is .ops-agent:has(.ops-res){flex-wrap:wrap}
 #view-is .ops-agent .agent-tip{margin-bottom:0}
+
+/* ===== 10/07 Figma '01 이슈보드 v2 — 칸반' 반영 ===== */
+:root{--kpi-bg:#fff9f9;--kpi-line:#f8e8e8;--chip-n:#f0eff2}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--kpi-bg:#221a1c;--kpi-line:#3a2529;--chip-n:#2d2b33}}
+:root[data-theme="dark"]{--kpi-bg:#221a1c;--kpi-line:#3a2529;--chip-n:#2d2b33}
+
+#view-is.wrap{gap:20px}
+#view-is .dept-f svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+#view-is .kpis2{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px}
+@media (max-width:980px){#view-is .kpis2{grid-template-columns:repeat(2,minmax(0,1fr))}}
+#view-is .kpi2{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto;column-gap:12px;row-gap:12px;align-items:center;min-height:96px;padding:20px 24px;text-align:left;background:var(--kpi-bg);border:1px solid var(--kpi-line);border-radius:8px;cursor:pointer;font:inherit;color:var(--ink)}
+#view-is .kpi2:hover{border-color:var(--accent-band)}
+#view-is .kpi2[aria-pressed="true"]{border-color:var(--crit);box-shadow:0 0 0 1px var(--crit)}
+#view-is .kpi2 .k{grid-column:1;font-size:16px;font-weight:700;line-height:21px}
+#view-is .kpi2 .d{grid-column:1;font-size:12px;color:var(--ink-2);line-height:18px}
+#view-is .kpi2 .v{grid-column:2;grid-row:1/3;align-self:end;font-size:32px;font-weight:700;line-height:34px}
+
+#view-is .board{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:24px 19px 24px}
+#view-is .bd-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;padding:0 5px}
+#view-is .bd-head h2{margin:0;font-size:18px;font-weight:700;line-height:26px}
+#view-is .bd-head p{margin:0;font-size:12px;color:var(--ink-2);line-height:18px}
+#view-is .bd-ctrls{display:flex;gap:8px;align-items:center;margin-top:-2px}
+#view-is .vt{display:inline-flex;gap:2px;padding:3px;background:var(--surface-2);border:1px solid var(--line);border-radius:10px}
+#view-is .vt button{border:1px solid transparent;background:transparent;border-radius:8px;height:30px;padding:0 13px;font:inherit;font-size:13px;color:var(--ink-2);cursor:pointer}
+#view-is .vt button[aria-pressed="true"]{background:var(--surface);border-color:var(--line);color:var(--ink);font-weight:700}
+#view-is .dept-f{display:inline-flex;align-items:center;gap:6px;height:38px;padding:0 4px 0 12px;border:1px solid var(--line-2);border-radius:10px;background:var(--surface);color:var(--ink)}
+#view-is .dept-f select{border:0;background:transparent;padding:0 8px 0 0;height:36px;font-size:13px;flex:none;cursor:pointer}
+#view-is .dept-f select:focus{outline:none}
+#view-is .dept-f:focus-within{outline:2px solid var(--accent);outline-offset:1px}
+
+#view-is .kb{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-top:24px;align-items:stretch}
+#view-is .lane{display:flex;flex-direction:column;min-width:0}
+#view-is .lane .ln-b{flex:1}
+@media (max-width:1100px){#view-is .kb{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:640px){#view-is .kb{grid-template-columns:minmax(0,1fr)}}
+#view-is .ln-h{display:flex;align-items:center;gap:8px;height:44px;padding:0 14px;background:var(--surface);border:1px solid var(--line);border-radius:10px}
+#view-is .ln-h i{width:12px;height:12px;border-radius:3px;flex:none}
+#view-is .ln-h b{font-size:14px;font-weight:700}
+#view-is .ln-h .cnt{font-size:11px;font-weight:700;color:var(--ink-2);background:var(--chip-n);border-radius:5px;padding:1px 7px;line-height:18px}
+#view-is .ln-b{display:flex;flex-direction:column;gap:9px;margin-top:8px;padding:8px;background:var(--surface-2);border-radius:12px;min-height:560px}
+
+#view-is .kc{background:var(--surface);border:1px solid var(--line);border-radius:10px;cursor:pointer;display:flex;flex-direction:column;text-align:left}
+#view-is .kc:hover{border-color:var(--line-2)}
+#view-is .kc:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+#view-is .kc[aria-current="true"]{border-color:var(--crit);box-shadow:0 0 0 1px var(--crit)}
+#view-is .kc-top{position:relative;display:flex;align-items:center;justify-content:space-between;padding:12px 10px 0 14px;height:30px}
+#view-is .kc-top .no{font-size:12px;color:var(--ink-2);line-height:17px}
+#view-is .more{width:24px;height:24px;border:0;background:transparent;border-radius:6px;color:var(--ink-3);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+#view-is .more:hover,#view-is .more[aria-expanded="true"]{background:var(--surface-2);color:var(--ink)}
+#view-is .more svg{width:18px;height:18px;fill:currentColor;stroke:none}
+#view-is .kc-menu{position:absolute;right:8px;top:34px;z-index:3;display:flex;flex-direction:column;min-width:128px;padding:4px;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px rgba(20,18,26,.12)}
+#view-is .kc-menu button{border:0;background:transparent;text-align:left;font:inherit;font-size:13px;color:var(--ink);padding:7px 10px;border-radius:6px;cursor:pointer}
+#view-is .kc-menu button:hover,#view-is .kc-menu button:focus-visible{background:var(--surface-2);outline:none}
+#view-is .kc .chips{display:flex;gap:5px;flex-wrap:wrap;padding:11px 14px 0 13px}
+#view-is .kc .vd,#view-is .kc .re{display:inline-flex;align-items:center;font-size:10px;font-weight:700;line-height:17px;padding:1px 7px;border-radius:10px;white-space:nowrap}
+#view-is .lane-done .vd{background:var(--v-none-bg);color:var(--ink-3)}
+#view-is .kc .re{background:var(--re-bg);color:var(--re-ink)}
+#view-is .kc h3{margin:0;padding:5px 14px 0;font-size:14px;font-weight:700;line-height:20px;color:var(--ink);overflow-wrap:anywhere}
+#view-is .kc .meta{display:flex;flex-direction:column;padding:14px 14px 11px;font-size:12px;line-height:18px}
+#view-is .kc .meta b{font-weight:500}
+#view-is .kc .meta span{color:var(--ink-2)}
+#view-is .kc-foot{display:flex;align-items:center;gap:6px;padding:10px 14px 12px;border-top:1px solid var(--chip-n)}
+#view-is .kc-foot .av{width:24px;height:24px;border-radius:50%;background:var(--accent-soft);color:var(--accent-ink);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none}
+#view-is .kc-foot .av.nob{background:transparent;border:1px dashed var(--line-2)}
+#view-is .kc-foot .own{font-size:12px;font-weight:500}
+#view-is .kc-foot .own.none{font-weight:400;color:var(--ink-3)}
+#view-is .kc-foot .cd{margin-left:auto;font-size:11.5px;color:var(--ink-2)}
+#view-is .ln-b .add{height:36px;border:1px dashed var(--line-2);border-radius:4px;background:transparent;color:var(--ink-3);font:inherit;font-size:12px;cursor:pointer}
+#view-is .ln-b .add:hover{color:var(--ink);border-color:var(--ink-3)}
+#view-is .kc-add{display:flex;flex-direction:column;gap:8px;padding:10px;background:var(--surface);border:1px solid var(--line-2);border-radius:10px}
+#view-is .kc-add div{display:flex;justify-content:flex-end;gap:6px}
+#view-is .kc-add .btn{padding:5px 10px;font-size:12px}
+
+#view-is .board .tw{margin:20px -19px -24px;border-top:1px solid var(--line)}
+#view-is .board table.it .vd{font-size:11px}
+
+#view-is .tlv{margin-top:20px;display:flex;flex-direction:column}
+#view-is .tl-row{display:grid;grid-template-columns:260px minmax(0,1fr);gap:16px;align-items:center;padding:10px 5px;border-bottom:1px solid var(--line);cursor:pointer}
+#view-is .tl-row:hover{background:var(--surface-2)}
+#view-is .tl-row:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+#view-is .tl-row.tl-axis{cursor:default;padding-top:0;font-size:11px;color:var(--ink-3)}
+#view-is .tl-row.tl-axis:hover{background:transparent}
+#view-is .tl-name{display:flex;flex-direction:column;min-width:0}
+#view-is .tl-name b{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#view-is .tl-name small{font-size:11px;color:var(--ink-3)}
+#view-is .tl-track{position:relative;height:22px}
+#view-is .tl-axis .tl-track span{position:absolute;top:3px;transform:translateX(-50%)}
+#view-is .tl-bar{position:absolute;top:6px;height:10px;border-radius:5px;background:var(--crit-bg)}
+#view-is .tl-bar.lane-new{background:var(--crit-bg);box-shadow:inset 0 0 0 1px var(--accent-band)}
+#view-is .tl-bar.lane-open{background:color-mix(in srgb,var(--s1) 22%,transparent)}
+#view-is .tl-bar.lane-watch{background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--line-2)}
+#view-is .tl-bar.lane-done{background:var(--good-bg)}
+#view-is .tl-ev{position:absolute;top:5px;width:12px;height:12px;border-radius:50%;transform:translateX(-50%);border:2px solid var(--surface)}
+#view-is .tlv .legend{margin-top:12px;padding-left:5px}

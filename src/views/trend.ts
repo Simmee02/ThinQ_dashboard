@@ -1,3 +1,4 @@
+import { AGENT_ICON } from '../shared/ui';
 // VoC 분석 > 기간별 리뷰 추이: 요약 카드, 기간 달력, 리뷰 수·평균 별점 그래프 (고른 시장 하나 기준)
 // views/trend.html 이 문서에 들어간 뒤 main.js 가 이 모듈을 불러옵니다.
 // 시장(언어권)별 수집 리뷰 수·불만 비율 (meta.json) · VoC 분석에서 고른 시장 하나만 그립니다
@@ -83,7 +84,7 @@ function dist(ids,a,b){
 const stats=o=>{const n=o.reduce((x,y)=>x+y,0);return{n,avg:n?(o[0]+2*o[1]+3*o[2]+4*o[3]+5*o[4])/n:null,low:n?(o[0]+o[1])/n:null}};
 const sel=()=>[...state.groups];
 
-document.querySelectorAll<HTMLElement>('[data-v]').forEach(b=>b.onclick=()=>{state.view=b.dataset.v;render()});
+document.querySelectorAll<HTMLElement>('#view-ov [data-v]').forEach(b=>b.onclick=()=>{state.view=b.dataset.v;render()});
 document.getElementById('prev').onclick=()=>{state.calM--;if(state.calM<0){state.calM=11;state.calY--}renderCal()};
 document.getElementById('next').onclick=()=>{state.calM++;if(state.calM>11){state.calM=0;state.calY++}renderCal()};
 document.querySelectorAll<HTMLElement>('#presets button').forEach(b=>b.onclick=()=>{
@@ -239,12 +240,31 @@ function periodSA(){
   return{S,A};
 }
 
+// VoC 분석 > 리뷰 추이의 에이전트 요약 (선택 기간 기준)
+function trendSummary(S,A,list){
+  const box=document.getElementById('trend-sum');if(!box)return;
+  if(state.to===null||!S.n){box.innerHTML='';return}
+  const em=t=>`<b class="em">${t}</b>`;
+  const peak=buckets('day',state.from,state.to).map(b=>({d:days[b.from],...stats(dist(sel(),b.from,b.to))})).reduce((m,p)=>!m||p.n>m.n?p:m,null);
+  const hits=Object.keys(EVENTS).filter(e=>idx[e]>=state.from&&idx[e]<=state.to);
+  const worst=list.reduce((m,p)=>!m||p.avg<m.avg?p:m,null);
+  const span=state.to-state.from+1;
+  const lines=[hits.length
+    ?`장애 보도일(${em(hits.map(md).join(', '))}) 전후로 리뷰가 급증했고, ${md(peak.d)}에는 하루 ${em(fmt(peak.n)+'건')}이 들어왔습니다.`
+    :`선택한 ${span}일 동안 리뷰 ${em(fmt(S.n)+'건')}이 들어왔고, 가장 많은 날은 ${md(peak.d)}(${fmt(peak.n)}건)입니다.`,
+    hits.length&&worst
+    ?`같은 기간 평균 별점은 ${em(f2(worst.avg)+'점')}까지 떨어져, 장애 구간은 이슈 집중도 계산에서 제외했습니다.`
+    :`같은 기간 평균 별점은 ${em(f2(S.avg)+'점')}으로 전체 기간(${f2(A.avg)}점)보다 ${S.avg<A.avg?'낮습니다':'높거나 비슷합니다'}.`];
+  box.innerHTML=`<div class="asum-h">${AGENT_ICON}<b>에이전트 요약</b></div><ul>${lines.map(l=>`<li>${l}</li>`).join('')}</ul>`;
+}
+
 function renderStats({S,A}){
   const list=buckets(state.g,state.from,state.to).map(b=>({b,...stats(dist(sel(),b.from,b.to))})).filter(p=>p.n>=MIN_N);
   const worst=list.reduce((m,p)=>!m||p.avg<m.avg?p:m,null);
   const unit={day:'날',week:'주',month:'달'}[state.g];
   const dAvg=S.avg-A.avg,dLow=(S.low-A.low)*100;
   const wl=worst?(state.g==='month'?worst.b.key:md(days[worst.b.from])+(state.g==='week'?' 주':'')):'—';
+  trendSummary(S,A,list);
   const statsEl=document.getElementById('stats');if(!statsEl)return; // VoC 분석에서는 요약 카드 없이 그래프만 씁니다
   statsEl.innerHTML=[
     ['평균 별점',S.avg?`${f2(S.avg)}<small> / 5</small>`:'—',S.avg?`전체 기간 ${f2(A.avg)} 대비 <span class="${dAvg<0?'down':''}">${dAvg>0?'+':''}${f2(dAvg)}</span>`:''],

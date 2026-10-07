@@ -1,64 +1,171 @@
-// VoC 이슈 관리(#issues): KPI, 이슈 표, 상세 Drawer(세부 내용·처리·분석·메일)
+// 이슈보드(#issues): KPI, 칸반 보드 / 목록 / 타임라인, 상세 Drawer(세부 내용·처리·분석·메일)
 import { TODAY, ME, DEPTS, ST, EV, I, need, deptName, md, prio, fixDate, LOCALE, scr } from '../data/issues';
-import type { IssueEvent } from '../data/issues';
+import type { Issue, IssueEvent, Status } from '../data/issues';
+import { V } from '../data/markets';
 import { $, esc, toast, AGENT_ICON } from '../shared/ui';
 import { go, setParam } from '../router';
 import { refresh as refreshReport, goReport, buildReport } from './report';
 
-const state: { dept: string; f: string; q: string | null; sel: string | null; text?: string } = { dept: 'all', f: 'need', q: null, sel: null };
-const prPill=it=>{if(it.status==='done')return `<span class="pr arch">아카이브</span>`;const p=prio(it);return `<span class="pr ${p.cls}">${p.label}<span class="sc">${p.score}</span></span>`};
-function visible(){
-  if(state.f==='archive')return I.filter(it=>!need(it)&&(state.dept==='all'||it.dept===state.dept)).sort((a,b)=>fixDate(b).localeCompare(fixDate(a)));
-  return I.filter(it=>{
-    if(state.dept!=='all'&&it.dept!==state.dept)return false;
-    if(state.q==='reopen')return it.status==='reopen';
-    if(state.q==='new')return it.status==='new';
-    if(state.q==='orphan')return it.dept==='l10n'&&need(it);
-    return need(it);
-  }).sort((a,b)=>prio(b).score-prio(a).score);
+type ViewMode = 'board' | 'list' | 'timeline';
+const state: { dept: string; f: string; q: string | null; sel: string | null; view: ViewMode; adding: string | null; menu: string | null } = { dept: 'all', f: 'need', q: null, sel: null, view: 'board', adding: null, menu: null };
+
+// 보드 열: 신규 열에는 신규·재발이 함께 들어가고, 재발은 카드에 '재발' 칩으로 표시합니다
+const LANES: { id: string; name: string; st: Status[]; color: string }[] = [
+  { id: 'new', name: '신규', st: ['new', 'reopen'], color: 'var(--crit)' },
+  { id: 'open', name: '진행 중', st: ['open'], color: 'var(--s1)' },
+  { id: 'watch', name: '관찰', st: ['watch'], color: 'var(--ink-3)' },
+  { id: 'done', name: '해결됨', st: ['done'], color: 'var(--good)' },
+];
+const laneOf = (it: Issue) => LANES.find(l => l.st.includes(it.status))!;
+const orphan = (it: Issue) => need(it) && (it.dept === 'l10n' || !it.owner);
+const vName = (it: Issue) => (V.find(v => v.id === it.verdict) || V[3]).name;
+const vChip = (it: Issue) => `<span class="vd v-${it.verdict}">${vName(it)}</span>`;
+const langText = (it: Issue) => !it.langs.length ? '—' : it.langs.length > 2 ? it.langs.slice(0, 2).join(', ') + ' 외 ' + (it.langs.length - 2) : it.langs.join(', ');
+const noOf = (id: string) => 'No.' + id.replace(/^VOC-/, '');
+
+function visible() {
+  return I.filter(it => {
+    if (state.dept !== 'all' && it.dept !== state.dept) return false;
+    if (state.q === 'reopen') return it.status === 'reopen';
+    if (state.q === 'new') return it.status === 'new';
+    if (state.q === 'orphan') return orphan(it);
+    return true;
+  });
+}
+const byPrio = (a: Issue, b: Issue) => need(a) && need(b) ? prio(b).score - prio(a).score : fixDate(b).localeCompare(fixDate(a));
+
+const BULB = AGENT_ICON;
+const stPill = (s: Status) => `<span class="st ${s}"><i></i>${ST[s].t}</span>`;
+
+function renderTop() {
+  const live = I.filter(need);
+  $('v-need').textContent = live.length;
+  $('v-reopen').textContent = live.filter(i => i.status === 'reopen').length;
+  $('v-new').textContent = live.filter(i => i.status === 'new').length;
+  $('v-orphan').textContent = live.filter(orphan).length;
+  const hot = live.filter(i => i.status === 'reopen' || i.status === 'new').length;
+  $('bell-n').textContent = hot; $('bell-n').hidden = !hot;
+  document.querySelectorAll<HTMLElement>('#view-is .stat').forEach(b => b.setAttribute('aria-pressed', !!state.q && state.q === b.dataset.q));
+  $('dept-sel').innerHTML = [{ id: 'all', name: '전체 부서' }, ...DEPTS].map(d => `<option value="${d.id}" ${state.dept === d.id ? 'selected' : ''}>${d.name}</option>`).join('');
+  document.querySelectorAll<HTMLElement>('#view-is .vt button').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === state.view));
+  const qn = ({ reopen: '재발 이슈', new: '신규 이슈', orphan: '담당자 미배정' } as Record<string, string>)[state.q || ''];
+  $('bd-sub').textContent = qn || state.dept !== 'all'
+    ? [qn, state.dept !== 'all' ? deptName(state.dept) : ''].filter(Boolean).join(' · ') + `만 보는 중 · ${visible().length}건`
+    : '이슈 처리 현황을 확인하고, 관리해보세요.';
 }
 
-const BULB=AGENT_ICON;
-const stPill=s=>`<span class="st ${s}"><i></i>${ST[s].t}</span>`;
+const drawerOpen = () => !$('drawer').hidden;
+function openDrawer(id: string) { setParam(id); state.sel = id; state.menu = null; const oi = I.find(i => i.id === id); if (oi) { oi.editing = false; oi.pendingDone = false; oi.err = ''; oi.pick = null } $('drawer').hidden = false; $('scrim').hidden = false; renderList(); $('drawer').scrollTop = 0; $('dr-close').focus() }
+function closeDrawer() { setParam(''); const last = state.sel; $('drawer').hidden = true; $('scrim').hidden = true; state.sel = null; renderList(); const r = last && document.querySelector<HTMLElement>(`#view-is [data-id="${last}"]`); if (r) r.focus() }
 
-function renderTop(){
-  const live=I.filter(need);
-  $('v-need').textContent=live.length;
-  $('v-reopen').textContent=live.filter(i=>i.status==='reopen').length;
-  $('v-new').textContent=live.filter(i=>i.status==='new').length;
-  $('v-orphan').textContent=live.filter(i=>i.dept==='l10n').length;
-  const hot=live.filter(i=>i.status==='reopen'||i.status==='new').length;
-  $('bell-n').textContent=hot;$('bell-n').hidden=!hot;
-  document.querySelectorAll<HTMLElement>('#view-is .stat').forEach(b=>b.setAttribute('aria-pressed',state.f!=='archive'&&!!state.q&&state.q===b.dataset.q));
-  const sel=$('dept-sel');
-  sel.innerHTML=[{id:'all',name:'전체 부서'},...DEPTS].map(d=>{const n=I.filter(it=>need(it)&&(d.id==='all'||it.dept===d.id)).length;return `<option value="${d.id}" ${state.dept===d.id?'selected':''}>${d.name} (${n})</option>`}).join('');
-  $('arch-n').textContent=I.filter(it=>!need(it)).length;$('f-arch').setAttribute('aria-pressed',state.f==='archive');
+// ---------- 보드 ----------
+const MORE = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="12" cy="19" r="1.2"/></svg>';
+function cardHTML(it: Issue) {
+  const sel = drawerOpen() && it.id === state.sel;
+  return `<article class="kc" data-id="${it.id}" tabindex="0" aria-current="${sel}">
+    <div class="kc-top"><span class="no">${noOf(it.id)}</span><button class="more" data-more="${it.id}" aria-label="${noOf(it.id)} 메뉴" aria-expanded="${state.menu === it.id}">${MORE}</button>
+      ${state.menu === it.id ? `<div class="kc-menu" role="menu"><button role="menuitem" data-act="open">상세 보기</button><button role="menuitem" data-act="report">보고서 만들기</button></div>` : ''}</div>
+    <div class="chips">${vChip(it)}${it.status === 'reopen' ? '<span class="re">재발</span>' : ''}</div>
+    <h3>${esc(it.title)}</h3>
+    <div class="meta"><b>${deptName(it.dept)}</b><span>${esc(langText(it))}</span></div>
+    <div class="kc-foot">${it.owner ? `<span class="av">${esc(it.owner[0])}</span><span class="own">${esc(it.owner)}</span>` : '<span class="av nob"></span><span class="own none">미지정</span>'}<span class="cd">${md(it.first)} 생성됨</span></div>
+  </article>`;
+}
+function renderBoard() {
+  const v = visible();
+  $('kb').innerHTML = LANES.map(l => {
+    const cards = v.filter(it => l.st.includes(it.status)).sort(byPrio);
+    const add = l.id === 'done' ? '' : state.adding === l.id
+      ? `<form class="kc-add" data-lane="${l.id}"><input name="t" placeholder="이슈 제목" aria-label="새 이슈 제목" autocomplete="off" required><div><button type="button" class="btn" data-cancel>취소</button><button class="btn primary">추가</button></div></form>`
+      : `<button class="add" data-add="${l.id}">+ 이슈 추가하기</button>`;
+    return `<div class="lane lane-${l.id}">
+      <div class="ln-h"><i style="background:${l.color}"></i><b>${l.name}</b><span class="cnt">${cards.length}</span></div>
+      <div class="ln-b">${cards.map(cardHTML).join('')}${add}</div>
+    </div>`;
+  }).join('');
+  const kb: HTMLElement = $('kb');
+  kb.querySelectorAll('.kc').forEach((c: HTMLElement) => {
+    c.onclick = e => { if ((e.target as HTMLElement).closest('.more,.kc-menu')) return; openDrawer(c.dataset.id!) };
+    c.onkeydown = e => { if (e.target === c && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openDrawer(c.dataset.id!) } };
+  });
+  kb.querySelectorAll('[data-more]').forEach((b: HTMLElement) => b.onclick = () => { state.menu = state.menu === b.dataset.more ? null : b.dataset.more!; renderBoard(); const m = kb.querySelector<HTMLElement>('.kc-menu button'); if (m) m.focus() });
+  kb.querySelectorAll('.kc-menu [data-act]').forEach((b: HTMLElement) => b.onclick = () => {
+    const id = b.closest<HTMLElement>('.kc')!.dataset.id!; state.menu = null;
+    if (b.dataset.act === 'open') openDrawer(id); else goReport(id, 'a4');
+  });
+  kb.querySelectorAll('[data-add]').forEach((b: HTMLElement) => b.onclick = () => { state.adding = b.dataset.add!; renderBoard(); kb.querySelector<HTMLInputElement>('.kc-add input')!.focus() });
+  const f = kb.querySelector<HTMLFormElement>('.kc-add');
+  if (f) {
+    f.querySelector<HTMLElement>('[data-cancel]')!.onclick = () => { state.adding = null; renderBoard() };
+    f.onkeydown = e => { if (e.key === 'Escape') { state.adding = null; renderBoard() } };
+    f.onsubmit = e => { e.preventDefault(); const t = (f.elements.namedItem('t') as HTMLInputElement).value.trim(); if (!t) return; addIssue(t, LANES.find(l => l.id === f.dataset.lane)!.st[0]) };
+  }
+}
+// 직접 추가한 이슈: 에이전트가 찾은 리뷰가 아직 없으므로 판정 보류로 시작합니다
+let seq = 300;
+function addIssue(title: string, status: Status) {
+  const id = 'VOC-' + (++seq);
+  I.push({ id, verdict: 'none', title, dept: state.dept === 'all' ? 'thinq' : state.dept, area: '직접 등록', status, langs: [], topic: '직접 등록',
+    shape: [[TODAY, 0]], events: [[TODAY, 'detect', `${ME}이(가) 직접 등록`]], why: '담당자가 직접 등록한 이슈입니다. 관련 리뷰가 모이면 에이전트가 판정을 붙입니다.', reviews: [],
+    series: [{ d: TODAY, v: 0 }], total: 0, first: TODAY, trend: null, log: [[ME, '이슈 직접 등록', TODAY]] });
+  state.adding = null; toast(`${noOf(id)} 이슈를 추가했습니다`); render();
 }
 
-const drawerOpen=()=>!$('drawer').hidden;
-function openDrawer(id){setParam(id);state.sel=id;const oi=I.find(i=>i.id===id);if(oi){oi.editing=false;oi.pendingDone=false;oi.err='';oi.pick=null}$('drawer').hidden=false;$('scrim').hidden=false;renderList();$('drawer').scrollTop=0;$('dr-close').focus()}
-function closeDrawer(){setParam('');const last=state.sel;$('drawer').hidden=true;$('scrim').hidden=true;state.sel=null;renderList();const r=last&&document.querySelector<HTMLElement>(`#view-is tr[data-id="${last}"]`);if(r)r.focus()}
+// VoC 분석의 '확인할 과제'에서 승인한 이슈를 신규 열에 올립니다
+export function addFromVoc(o: { title: string; verdict: Issue['verdict']; langs: string[]; topic: string; why: string }) {
+  const id = 'VOC-' + (++seq);
+  I.push({ id, verdict: o.verdict, title: o.title, dept: 'thinq', area: 'VoC 분석', status: 'new', langs: o.langs, topic: o.topic,
+    shape: [[TODAY, 0]], events: [[TODAY, 'detect', 'VoC 분석에서 이슈 승인', ME]], why: o.why, reviews: [],
+    series: [{ d: TODAY, v: 0 }], total: 0, first: TODAY, trend: null, log: [[ME, 'VoC 분석에서 이슈 승인', TODAY]] });
+  render();
+  return noOf(id);
+}
 
-function renderList(){
-  const txt=(state.text||'').toLowerCase();
-  const v=visible().filter(it=>!txt||(it.title+' '+it.id+' '+it.topic).toLowerCase().includes(txt)),box=$('issue-rows');
-  const qn={reopen:'재발 이슈',new:'신규 이슈',orphan:'담당 미배정'}[state.q];
-  $('list-sort').textContent=`${qn?qn+' · ':''}${v.length}건${state.dept!=='all'?' · '+deptName(state.dept):''}${txt?' · "'+state.text+'" 검색':''} · ${state.f==='archive'?'처리 완료일 최신 순':'우선순위 높은 순'}`;
-  $('list-title').textContent=state.f==='archive'?'아카이브':'이슈 목록';
-  if(!v.length){box.innerHTML='<tr><td colspan="7" class="empty" style="cursor:default">조건에 맞는 이슈가 없습니다.</td></tr>'}
-  else box.innerHTML=v.map((it,k)=>{
-    const last=[...it.series].reverse().find(p=>p.v>0);
-    return `<tr data-id="${it.id}" tabindex="0" aria-selected="${drawerOpen()&&it.id===state.sel}">
-      <td class="rk">${state.f==='archive'?'·':k+1}</td>
-      <td><span class="tt">${it.title}</span><span class="tid">${it.id} · ${it.topic}</span></td>
-      <td>${deptName(it.dept)}${it.dept==='l10n'?' <span class="tag owner-none">담당 없음</span>':''}</td>
-      <td>${it.status==='done'?'<span class="st done"><i></i>해결</span>':stPill(it.status)}</td>
-      <td>${it.langs.length>2?it.langs.slice(0,2).join(', ')+' 외 '+(it.langs.length-2):it.langs.join(', ')}</td>
-      <td>${it.owner?`<span class="${it.owner===ME?'own-me':'own'}">${esc(it.owner)}</span>`:'<span class="nobody">미지정</span>'}</td>
-      <td>${last?md(last.d):'—'}</td>
-    </tr>`}).join('');
-  box.querySelectorAll('tr[data-id]').forEach(r=>{r.onclick=()=>openDrawer(r.dataset.id);r.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openDrawer(r.dataset.id)}}});
-  if(drawerOpen()){if(I.find(i=>i.id===state.sel))renderDetail();else closeDrawer()}
+// ---------- 목록 ----------
+function renderTable() {
+  const v = visible().sort((a, b) => LANES.indexOf(laneOf(a)) - LANES.indexOf(laneOf(b)) || byPrio(a, b)), box = $('issue-rows');
+  if (!v.length) { box.innerHTML = '<tr><td colspan="8" class="empty" style="cursor:default">조건에 맞는 이슈가 없습니다.</td></tr>'; return }
+  box.innerHTML = v.map((it, k) => `<tr data-id="${it.id}" tabindex="0" aria-selected="${drawerOpen() && it.id === state.sel}">
+      <td class="rk">${k + 1}</td>
+      <td><span class="tt">${esc(it.title)}</span><span class="tid">${noOf(it.id)} · ${esc(it.topic)}</span></td>
+      <td>${vChip(it)}</td>
+      <td>${deptName(it.dept)}</td>
+      <td>${it.status === 'done' ? '<span class="st done"><i></i>해결됨</span>' : stPill(it.status)}</td>
+      <td>${esc(langText(it))}</td>
+      <td>${it.owner ? `<span class="${it.owner === ME ? 'own-me' : 'own'}">${esc(it.owner)}</span>` : '<span class="nobody">미지정</span>'}</td>
+      <td>${md(it.first)}</td>
+    </tr>`).join('');
+  box.querySelectorAll('tr[data-id]').forEach((r: HTMLElement) => { r.onclick = () => openDrawer(r.dataset.id!); r.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDrawer(r.dataset.id!) } } });
+}
+
+// ---------- 타임라인: 9월 한 달 동안 이슈별 진행 기간과 처리 이벤트 ----------
+function renderTimeline() {
+  const from = Date.parse('2026-09-01'), to = Date.parse(TODAY), span = to - from + 864e5;
+  const pos = (d: string) => Math.max(0, Math.min(100, (Date.parse(d) - from) / span * 100));
+  // 막대: 감지(첫 이벤트) ~ 해결 처리일(해결됨) 또는 오늘(진행 중인 이슈)
+  const spanOf = (it: Issue): [string, string] => { const a = it.first! < '2026-09-01' ? '2026-09-01' : it.first!; return [a, it.status === 'done' ? (fixDate(it) || a) : TODAY] };
+  const v = visible().filter(it => spanOf(it)[1] >= '2026-09-01')
+    .sort((a, b) => LANES.indexOf(laneOf(a)) - LANES.indexOf(laneOf(b)) || byPrio(a, b));
+  const ticks = ['2026-09-01', '2026-09-08', '2026-09-15', '2026-09-22', '2026-09-29'];
+  $('tl-wrap').innerHTML = !v.length ? '<div class="empty">조건에 맞는 이슈가 없습니다.</div>' : `
+    <div class="tl-row tl-axis"><span></span><div class="tl-track">${ticks.map(d => `<span style="left:${pos(d)}%">${md(d)}</span>`).join('')}</div></div>
+    ${v.map(it => {
+      const [a, b] = spanOf(it);
+      const evs = it.events.filter(e => e[0] >= '2026-09-01' && e[1] !== 'hypo' && e[1] !== 'mail');
+      return `<div class="tl-row" data-id="${it.id}" tabindex="0" role="button" aria-label="${esc(it.title)} 상세 보기">
+        <span class="tl-name"><b>${esc(it.title)}</b><small>${noOf(it.id)} · ${laneOf(it).name}</small></span>
+        <div class="tl-track"><span class="tl-bar lane-${laneOf(it).id}" style="left:${pos(a)}%;width:${Math.max(1.2, pos(b) - pos(a) + 100 / 30)}%"></span>
+          ${evs.map(e => `<i class="tl-ev" style="left:${pos(e[0])}%;background:${EV[e[1]].c}" title="${e[0]} ${EV[e[1]].t}"></i>`).join('')}</div>
+      </div>`;
+    }).join('')}
+    <div class="legend"><span><i style="background:var(--warn)"></i>감지</span><span><i style="background:var(--good)"></i>해결 처리</span><span><i style="background:var(--crit)"></i>재발</span></div>`;
+  $('tl-wrap').querySelectorAll('[data-id]').forEach((r: HTMLElement) => { r.onclick = () => openDrawer(r.dataset.id!); r.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDrawer(r.dataset.id!) } } });
+}
+
+function renderList() {
+  $('kb').hidden = state.view !== 'board'; $('list-wrap').hidden = state.view !== 'list'; $('tl-wrap').hidden = state.view !== 'timeline';
+  if (state.view === 'board') renderBoard(); else if (state.view === 'list') renderTable(); else renderTimeline();
+  if (drawerOpen()) { if (I.find(i => i.id === state.sel)) renderDetail(); else closeDrawer() }
 }
 
 function chart(it,s){
@@ -98,8 +205,8 @@ function renderDetail(){
           ${it.status==='done'?'<button class="btn" id="b-reopen">다시 열기</button>':'<button class="btn primary" id="b-fix">처리 완료</button>'}
         </div>
       </div>
-      <div class="tags">${it.status!=='done'?stPill(it.status):'<span class="st done"><i></i>해결</span>'}<span class="tag">${esc(it.area)}</span>${it.dept==='l10n'?'<span class="tag owner-none">담당 없음</span>':''}</div>
-      ${p?'':`<div class="score"><span class="pr arch">아카이브</span><span>처리 완료 ${fixDate(it)||'—'} · 참고용으로 보관 중. 관련 리뷰가 다시 늘면 재발로 올라옵니다.</span></div>`}
+      <div class="tags">${it.status!=='done'?stPill(it.status):'<span class="st done"><i></i>해결</span>'}${vChip(it)}<span class="tag">${esc(it.area)}</span>${it.dept==='l10n'?'<span class="tag owner-none">담당 없음</span>':''}</div>
+      ${p?'':`<div class="score"><span class="pr arch">해결됨</span><span>처리 완료 ${fixDate(it)||'—'} · 참고용으로 보관 중. 관련 리뷰가 다시 늘면 재발로 올라옵니다.</span></div>`}
       <div class="why agent-tip">${BULB}<span><b class="tip-k">에이전트의 팁 :</b> ${it.why}</span></div>
       <div class="kv">
         <div><span>최초 발생</span><b>${it.first}</b></div>
@@ -155,14 +262,14 @@ function renderDetail(){
     else it.err='무엇을 했는지 메모를 남기고 저장해 주세요. 재발 판단의 기준이 됩니다.';
     renderDetail();const f=$(it.owner?'o-memo':'pk-q');f.scrollIntoView({block:'center'});f.focus();
   };
-  if($('b-reopen'))$('b-reopen').onclick=()=>{it.status=it.prev&&it.prev!=='done'?it.prev:'open';state.f='need';toast(`${it.id} 다시 열었습니다 · 이슈 목록으로 돌아갑니다`);render()};
+  if($('b-reopen'))$('b-reopen').onclick=()=>{it.status=it.prev&&it.prev!=='done'?it.prev:'open';toast(`${it.id} 다시 열었습니다`);render()};
 }
 function markDone(it){
   it.prev=it.status;it.status='done';it.pendingDone=false;it.editing=false;it.err='';
   it.events.push([TODAY,'fix','담당자 해결 처리 완료',it.memo]);
   it.why='처리 완료했습니다. 관련 리뷰가 다시 늘면 에이전트가 재발로 올립니다.';
   it.editedAt=fmtDate(new Date());it.editedBy=ME;it.log.push([ME,'처리 완료 · '+it.memo,nowStr()]);
-  toast(`${it.id} 처리 완료 · 아카이브로 옮겼습니다`);
+  toast(`${it.id} 처리 완료 · 해결됨으로 옮겼습니다`);
 }
 function mailHTML(it){
   const bar=`<div class="mail-bar${it.status==='new'?' new':''}"><span>에이전트가 보내는 알림 메일 미리보기</span><button class="btn" id="m-toggle" aria-expanded="${!it.mailClosed}">${it.mailClosed?'펼치기':'닫기'}</button></div>`;
@@ -309,21 +416,23 @@ function bindShot(it){
 
 
 // ---------- 이벤트 연결 ----------
-$('f-arch').onclick=()=>{state.f=state.f==='archive'?'need':'archive';state.q=null;state.sel=null;render()};
-document.querySelectorAll<HTMLElement>('#view-is .stat').forEach(b=>b.onclick=()=>{const q=b.dataset.q;state.q=(q==='need'||(state.q===q&&state.f!=='archive'))?null:q;state.f='need';state.sel=null;render()});
-$('open-case').onclick=()=>{state.dept='all';state.f='archive';state.q=null;render();openDrawer('VOC-201')};
+document.querySelectorAll<HTMLElement>('#view-is .stat').forEach(b=>b.onclick=()=>{const q=b.dataset.q!;state.q=(q==='need'||state.q===q)?null:q;state.sel=null;render()});
+document.querySelectorAll<HTMLElement>('#view-is .vt button').forEach(b=>b.onclick=()=>{state.view=b.dataset.v as ViewMode;state.menu=null;state.adding=null;render()});
 $('dept-sel').onchange=()=>{state.dept=$('dept-sel').value;render()};
 $('dr-close').onclick=closeDrawer;$('scrim').onclick=closeDrawer;
-document.addEventListener('keydown',e=>{if(e.key!=='Escape'||!drawerOpen())return;const it=I.find(i=>i.id===state.sel);if(it&&it.pick){const r=it.pick;it.pick=null;renderDetail();const b=document.querySelector<HTMLElement>(`#detail [data-pick="${r}"]`);if(b)b.focus();return}closeDrawer()});
-$('q-search').addEventListener('input',()=>{state.text=$('q-search').value.trim();renderList()});
-$('bell').onclick=()=>{state.q=null;state.f='need';render();go('report')};
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Escape')return;
+  if(state.menu&&!drawerOpen()){const id=state.menu;state.menu=null;renderBoard();document.querySelector<HTMLElement>(`#kb [data-more="${id}"]`)?.focus();return}
+  if(!drawerOpen())return;const it=I.find(i=>i.id===state.sel);if(it&&it.pick){const r=it.pick;it.pick=null;renderDetail();const b=document.querySelector<HTMLElement>(`#detail [data-pick="${r}"]`);if(b)b.focus();return}closeDrawer()});
+document.addEventListener('click',e=>{if(state.menu&&!(e.target as HTMLElement).closest('.kc-menu,.more')){state.menu=null;renderBoard()}});
+$('bell').onclick=()=>{state.q=null;render();go('report')};
 
 export function render(){renderTop();renderList();refreshReport()}
 
 // 라우터가 #issues 를 보여 줄 때 호출: #issues.VOC-231 이면 그 이슈 상세를 엽니다
 export function onShow(param){
   const it=param&&I.find(i=>i.id===param);
-  if(it){if(!need(it))state.f='archive';if(state.sel!==it.id||!drawerOpen()){renderTop();openDrawer(it.id)}}
+  if(it){if(state.sel!==it.id||!drawerOpen()){renderTop();openDrawer(it.id)}}
   else if(drawerOpen())closeDrawer();
 }
 
